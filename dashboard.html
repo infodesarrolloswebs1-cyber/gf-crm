@@ -1,177 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>GF DESARROLLOS CRM</title>
-
+  <title>GF DESARROLLOS - Business OS</title>
   <style>
-    body{
-      margin:0;
-      font-family: Inter, Arial;
-      background:#0f172a;
-      color:white;
-    }
-
-    header{
-      background:#020617;
-      padding:18px 30px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      border-bottom:1px solid #1e293b;
-    }
-
-    header h1{
-      margin:0;
-      font-size:20px;
-    }
-
-    header button{
-      background:#ef4444;
-      border:none;
-      padding:8px 14px;
-      border-radius:8px;
-      color:white;
-      cursor:pointer;
-    }
-
-    .container{
-      padding:25px;
-    }
-
-    .top{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:20px;
-      flex-wrap:wrap;
-      gap:20px;
-    }
-
-    .total{
-      background:#111827;
-      padding:14px 18px;
-      border-radius:12px;
-      font-size:18px;
-      box-shadow:0 4px 20px rgba(0,0,0,0.3);
-    }
-
-    .form{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    input{
-      padding:10px;
-      border-radius:8px;
-      border:none;
-      background:#020617;
-      color:white;
-      border:1px solid #1e293b;
-    }
-
-    .btn{
-      background:#22c55e;
-      border:none;
-      padding:10px 16px;
-      border-radius:8px;
-      color:white;
-      cursor:pointer;
-      font-weight:bold;
-    }
-
-    .pipeline{
-      display:flex;
-      gap:20px;
-      margin-top:25px;
-      align-items:flex-start;
-    }
-
-    .col{
-      flex:1;
-      background:#020617;
-      padding:15px;
-      border-radius:14px;
-      min-height:500px;
-      border:1px solid #1e293b;
-    }
-
-    .col h3{
-      margin-top:0;
-      font-size:16px;
-      color:#94a3b8;
-      border-bottom:1px solid #1e293b;
-      padding-bottom:10px;
-      position:sticky;
-      top:0;
-      background:#020617;
-      z-index:10;
-    }
-
-    .card{
-      background:#111827;
-      padding:14px;
-      margin-bottom:12px;
-      border-radius:12px;
-      cursor:grab;
-      border:1px solid #1e293b;
-      transition:0.2s;
-    }
-
-    .card:hover{
-      transform:scale(1.02);
-    }
-
-    .usd{
-      color:#22c55e;
-      font-weight:bold;
-      margin-top:4px;
-    }
+    :root { --bg: #0f172a; --card: #1e293b; --green: #22c55e; --red: #ef4444; --accent: #3b82f6; }
+    body { margin:0; font-family: 'Inter', sans-serif; background: var(--bg); color:white; }
+    header { background:#020617; padding:15px 30px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; }
+    .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; padding: 25px; }
+    .stat-card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #334155; }
+    .stat-card span { color: #94a3b8; font-size: 14px; }
+    .stat-card h2 { margin: 5px 0 0; color: var(--green); }
+    .container { padding: 0 25px 25px; }
+    .form-box { background: #020617; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 10px; }
+    input { padding: 10px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white; flex: 1; }
+    .btn-add { background: var(--accent); border: none; padding: 10px 20px; border-radius: 6px; color: white; cursor: pointer; font-weight: bold; }
+    .pipeline { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 20px; }
+    .col { min-width: 280px; flex: 1; background: #020617; padding: 15px; border-radius: 14px; border: 1px solid #1e293b; min-height: 60h; }
+    .col h3 { font-size: 14px; text-transform: uppercase; color: #64748b; margin-bottom: 15px; }
+    .card { background: var(--card); padding: 15px; margin-bottom: 12px; border-radius: 10px; border: 1px solid #334155; cursor: grab; }
+    .card:active { cursor: grabbing; opacity: 0.6; }
+    .usd-tag { color: var(--green); font-weight: 700; margin-top: 8px; display: block; }
   </style>
 </head>
-
 <body>
 
 <header>
-  <h1>GF CRM</h1>
-  <button onclick="logout()">Cerrar sesión</button>
+  <h1 style="font-size: 18px; letter-spacing: 1px;">GF DESARROLLOS <span style="color:#3b82f6">PRO</span></h1>
+  <button onclick="logout()" style="background:var(--red); border:none; color:white; padding:8px 15px; border-radius:6px; cursor:pointer;">Cerrar Sesión</button>
 </header>
 
+<div class="stats-bar">
+  <div class="stat-card"><span>Pipeline Total</span><h2 id="totalPipeline">USD 0</h2></div>
+  <div class="stat-card"><span>Ventas Mes</span><h2 id="ventasMes">USD 0</h2></div>
+  <div class="stat-card"><span>Costos Fijos</span><h2>USD 4,400</h2></div>
+  <div class="stat-card"><span>Rentabilidad</span><h2 id="rentabilidad">0%</h2></div>
+</div>
+
 <div class="container">
-
-  <div class="top">
-    <div class="total">
-      💰 Pipeline: USD <span id="totalUSD">0</span>
-    </div>
-
-    <div class="form">
-      <input id="leadNombre" placeholder="Nombre">
-      <input id="leadEmpresa" placeholder="Empresa">
-      <input id="leadMonto" placeholder="USD">
-      <button class="btn" onclick="crearLead()">+ Lead</button>
-    </div>
+  <div class="form-box">
+    <input id="leadNombre" placeholder="Cliente / Proyecto">
+    <input id="leadEmpresa" placeholder="Empresa (Uber type, etc)">
+    <input id="leadMonto" type="number" placeholder="Monto USD">
+    <button class="btn-add" onclick="crearLead()">+ AGREGAR LEAD</button>
   </div>
 
   <div class="pipeline">
-
-    <div class="col" id="col-nuevo">
-      <h3>Nuevo</h3>
-    </div>
-
-    <div class="col" id="col-reunion">
-      <h3>Reunión</h3>
-    </div>
-
-    <div class="col" id="col-propuesta">
-      <h3>Propuesta</h3>
-    </div>
-
-    <div class="col" id="col-cerrado">
-      <h3>Cerrado</h3>
-    </div>
-
+    <div class="col" id="col-nuevo"><h3>📥 Nuevo</h3></div>
+    <div class="col" id="col-reunion"><h3>🤝 Reunión</h3></div>
+    <div class="col" id="col-propuesta"><h3>📄 Propuesta</h3></div>
+    <div class="col" id="col-cerrado"><h3>✅ Cerrado (Proyecto)</h3></div>
   </div>
-
 </div>
 
 <script type="module" src="dashboard.js"></script>

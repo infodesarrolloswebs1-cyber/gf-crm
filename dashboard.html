@@ -4,84 +4,125 @@
   <title>GF CRM</title>
 
   <style>
+
     body{
       margin:0;
-      font-family: Arial, Helvetica, sans-serif;
-      background:#eef1f6;
+      font-family: Inter, Arial;
+      background:#0f172a;
+      color:white;
     }
 
     header{
-      background:#111827;
-      color:white;
-      padding:15px 25px;
-      font-size:20px;
+      background:#020617;
+      padding:18px 30px;
       display:flex;
       justify-content:space-between;
       align-items:center;
+      border-bottom:1px solid #1e293b;
+    }
+
+    header h1{
+      margin:0;
+      font-size:20px;
+    }
+
+    header button{
+      background:#ef4444;
+      border:none;
+      padding:8px 14px;
+      border-radius:8px;
+      color:white;
+      cursor:pointer;
     }
 
     .container{
-      padding:20px;
+      padding:25px;
+    }
+
+    .top{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:20px;
+    }
+
+    .total{
+      background:#111827;
+      padding:14px 18px;
+      border-radius:12px;
+      font-size:18px;
+      box-shadow:0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .form{
+      display:flex;
+      gap:10px;
+    }
+
+    input{
+      padding:10px;
+      border-radius:8px;
+      border:none;
+      background:#020617;
+      color:white;
+      border:1px solid #1e293b;
+    }
+
+    .btn{
+      background:#22c55e;
+      border:none;
+      padding:10px 16px;
+      border-radius:8px;
+      color:white;
+      cursor:pointer;
+      font-weight:bold;
     }
 
     .pipeline{
       display:flex;
       gap:20px;
-      margin-top:20px;
+      margin-top:25px;
     }
 
     .col{
-      background:white;
+      flex:1;
+      background:#020617;
       padding:15px;
-      width:25%;
       border-radius:14px;
-      box-shadow:0 6px 18px rgba(0,0,0,0.08);
-      min-height:400px;
+      min-height:500px;
+      border:1px solid #1e293b;
     }
 
     .col h3{
       margin-top:0;
+      font-size:16px;
+      color:#94a3b8;
+      border-bottom:1px solid #1e293b;
+      padding-bottom:10px;
     }
 
     .card{
-      background:white;
-      padding:12px;
+      background:#111827;
+      padding:14px;
       margin-bottom:12px;
-      border-radius:10px;
-      border:1px solid #e5e7eb;
-      box-shadow:0 2px 5px rgba(0,0,0,0.05);
+      border-radius:12px;
+      cursor:grab;
+      border:1px solid #1e293b;
+      transition:0.2s;
     }
 
-    .card button{
-      margin-right:5px;
-      margin-top:5px;
-      border:none;
-      background:#111827;
-      color:white;
-      padding:5px 8px;
-      border-radius:6px;
-      cursor:pointer;
+    .card:hover{
+      transform:scale(1.02);
     }
 
-    .topbar{
-      display:flex;
-      gap:10px;
-      margin-bottom:15px;
+    .card b{
+      font-size:14px;
     }
 
-    input{
-      padding:8px;
-      border-radius:6px;
-      border:1px solid #ccc;
-    }
-
-    .total{
-      background:#111827;
-      color:white;
-      padding:10px;
-      border-radius:10px;
-      margin-bottom:15px;
-      display:inline-block;
+    .usd{
+      color:#22c55e;
+      font-weight:bold;
+      margin-top:4px;
     }
 
   </style>
@@ -90,43 +131,41 @@
 <body>
 
 <header>
-  GF CRM
+  <h1>GF CRM</h1>
   <button onclick="logout()">Cerrar sesión</button>
 </header>
 
 <div class="container">
 
-  <div class="total">
-    Total pipeline USD: <span id="totalUSD">0</span>
-  </div>
+  <div class="top">
+    <div class="total">
+      💰 Pipeline: USD <span id="totalUSD">0</span>
+    </div>
 
-  <div class="topbar">
-    <input id="leadNombre" placeholder="Nombre">
-    <input id="leadEmpresa" placeholder="Empresa">
-    <input id="leadMonto" placeholder="USD">
-    <button onclick="crearLead()">Guardar lead</button>
+    <div class="form">
+      <input id="leadNombre" placeholder="Nombre">
+      <input id="leadEmpresa" placeholder="Empresa">
+      <input id="leadMonto" placeholder="USD">
+      <button class="btn" onclick="crearLead()">+ Lead</button>
+    </div>
   </div>
 
   <div class="pipeline">
 
-    <div class="col">
+    <div class="col" id="col-nuevo">
       <h3>Nuevo</h3>
-      <div id="col-nuevo"></div>
     </div>
 
-    <div class="col">
+    <div class="col" id="col-reunion">
       <h3>Reunión</h3>
-      <div id="col-reunion"></div>
     </div>
 
-    <div class="col">
+    <div class="col" id="col-propuesta">
       <h3>Propuesta</h3>
-      <div id="col-propuesta"></div>
     </div>
 
-    <div class="col">
+    <div class="col" id="col-cerrado">
       <h3>Cerrado</h3>
-      <div id="col-cerrado"></div>
     </div>
 
   </div>
@@ -134,7 +173,7 @@
 </div>
 
 <script type="module" src="dashboard.js"></script>
-
 </body>
 </html>
+
 

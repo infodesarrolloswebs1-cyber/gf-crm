@@ -134,6 +134,24 @@ function actualizarIndicadores(pip, ven, cash) {
   set("comisionesPend", `USD ${(cash * 0.10).toLocaleString()}`);
   set("fondoReserva", `USD ${(cash * 0.20).toLocaleString()}`);
   
+  // LOGICA DE CAPACIDAD (COO)
+  const proyectosActivos = document.querySelectorAll("#tabla-proyectos tr").length;
+  const capCarga = document.getElementById("capacidadCarga");
+  const alerta = document.getElementById("alertaCapacidad");
+  
+  if(capCarga) {
+    capCarga.innerText = `${proyectosActivos}/5`;
+    if(proyectosActivos >= 5) {
+      capCarga.style.color = "var(--red)";
+      alerta.innerText = "⚠️ CAPACIDAD MÁXIMA: CONTRATAR DEV";
+      alerta.style.color = "var(--red)";
+    } else {
+      capCarga.style.color = "var(--green)";
+      alerta.innerText = "✅ DISPONIBLE PARA ESCALAR";
+      alerta.style.color = "var(--green)";
+    }
+  }
+
   const elRen = document.getElementById("rentabilidad");
   if(elRen) {
     const rent = ven > 0 ? (((ven - 4400) / ven) * 100).toFixed(0) : 0;

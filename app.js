@@ -17,9 +17,8 @@ window.login = async function () {
 
   try {
     await signInWithEmailAndPassword(auth, email, pass);
-    alert("Login correcto");
+    window.location.href = "/dashboard.html";
   } catch (e) {
-    console.log(e);
     alert("Error login");
   }
 };

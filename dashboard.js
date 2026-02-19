@@ -1,69 +1,84 @@
 import { db } from "./firebase.js";
+
 import {
   collection,
   getDocs,
   addDoc,
   updateDoc,
   doc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-window.crearCliente = async function () {
-  const nombre = prompt("Nombre");
-  const empresa = prompt("Empresa");
-  const monto = prompt("Monto USD");
+
+// =============================
+// CREAR LEAD
+// =============================
+window.crearLead = async function () {
+
+  const nombre = document.getElementById("leadNombre").value;
+  const empresa = document.getElementById("leadEmpresa").value;
+  const monto = document.getElementById("leadMonto").value;
 
   await addDoc(collection(db, "leads"), {
     nombre,
     empresa,
     monto: Number(monto),
-    estado: "nuevo"
+    estado: "nuevo",
+    fecha: new Date()
   });
 
   cargarLeads();
 };
 
+
+// =============================
+// CARGAR LEADS
+// =============================
 async function cargarLeads() {
-  document.querySelectorAll(".dropzone").forEach(z => z.innerHTML = "");
 
-  const querySnapshot = await getDocs(collection(db, "leads"));
+  document.getElementById("col-nuevo").innerHTML = "";
+  document.getElementById("col-reunion").innerHTML = "";
+  document.getElementById("col-propuesta").innerHTML = "";
+  document.getElementById("col-cerrado").innerHTML = "";
 
-  querySnapshot.forEach((docSnap) => {
+  const snap = await getDocs(collection(db, "leads"));
+
+  snap.forEach(docSnap => {
+
     const d = docSnap.data();
     const id = docSnap.id;
 
-    const card = document.createElement("div");
-    card.className = "card";
-    card.draggable = true;
-    card.dataset.id = id;
+    const card = `
+      <div class="card">
+        <b>${d.nombre}</b><br>
+        ${d.empresa}<br>
+        USD ${d.monto}<br><br>
 
-    card.innerHTML = `
-      <b>${d.nombre}</b><br>
-      ${d.empresa}<br>
-      USD ${d.monto}
+        <button onclick="mover('${id}','reunion')">Reunión</button>
+        <button onclick="mover('${id}','propuesta')">Propuesta</button>
+        <button onclick="mover('${id}','cerrado')">Cerrar</button>
+      </div>
     `;
 
-    card.addEventListener("dragstart", e => {
-      e.dataTransfer.setData("id", id);
-    });
+    const col = document.getElementById("col-" + d.estado);
+    if (col) col.innerHTML += card;
 
-    document.getElementById("col-" + d.estado).appendChild(card);
   });
 }
 
-document.querySelectorAll(".dropzone").forEach(zone => {
-  zone.addEventListener("dragover", e => e.preventDefault());
 
-  zone.addEventListener("drop", async e => {
-    e.preventDefault();
-    const id = e.dataTransfer.getData("id");
-    const nuevoEstado = zone.parentElement.dataset.estado;
+// =============================
+// MOVER ESTADO
+// =============================
+window.mover = async function (id, estado) {
 
-    await updateDoc(doc(db, "leads", id), {
-      estado: nuevoEstado
-    });
+  const ref = doc(db, "leads", id);
 
-    cargarLeads();
+  await updateDoc(ref, {
+    estado: estado
   });
-});
+
+  cargarLeads();
+};
 
 cargarLeads();
+

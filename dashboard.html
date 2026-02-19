@@ -4,29 +4,34 @@
   <title>GF DESARROLLOS - Business OS</title>
   <style>
     :root { --bg: #0f172a; --card: #1e293b; --green: #22c55e; --red: #ef4444; --accent: #3b82f6; }
-    body { margin:0; font-family: 'Inter', sans-serif; background: var(--bg); color:white; }
+    body { margin:0; font-family: 'Inter', Arial, sans-serif; background: var(--bg); color:white; overflow-x: hidden; }
     header { background:#020617; padding:15px 30px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; }
     .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; padding: 25px; }
-    .stat-card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #334155; }
-    .stat-card span { color: #94a3b8; font-size: 14px; }
-    .stat-card h2 { margin: 5px 0 0; color: var(--green); }
+    .stat-card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #334155; transition: 0.3s; }
+    .stat-card:hover { border-color: var(--accent); }
+    .stat-card span { color: #94a3b8; font-size: 13px; font-weight: 600; text-transform: uppercase; }
+    .stat-card h2 { margin: 8px 0 0; color: var(--green); font-size: 24px; }
     .container { padding: 0 25px 25px; }
-    .form-box { background: #020617; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 10px; }
-    input { padding: 10px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white; flex: 1; }
-    .btn-add { background: var(--accent); border: none; padding: 10px 20px; border-radius: 6px; color: white; cursor: pointer; font-weight: bold; }
-    .pipeline { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 20px; }
-    .col { min-width: 280px; flex: 1; background: #020617; padding: 15px; border-radius: 14px; border: 1px solid #1e293b; min-height: 60h; }
-    .col h3 { font-size: 14px; text-transform: uppercase; color: #64748b; margin-bottom: 15px; }
-    .card { background: var(--card); padding: 15px; margin-bottom: 12px; border-radius: 10px; border: 1px solid #334155; cursor: grab; }
-    .card:active { cursor: grabbing; opacity: 0.6; }
-    .usd-tag { color: var(--green); font-weight: 700; margin-top: 8px; display: block; }
+    .form-box { background: #020617; padding: 20px; border-radius: 12px; margin-bottom: 25px; display: flex; gap: 12px; border: 1px solid #1e293b; }
+    input { padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; flex: 1; outline: none; }
+    input:focus { border-color: var(--accent); }
+    .btn-add { background: var(--accent); border: none; padding: 0 25px; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; transition: 0.2s; }
+    .btn-add:hover { background: #2563eb; transform: translateY(-1px); }
+    .pipeline { display: flex; gap: 20px; align-items: flex-start; }
+    .col { flex: 1; background: #020617; padding: 15px; border-radius: 14px; border: 1px solid #1e293b; min-height: 500px; }
+    .col h3 { font-size: 13px; text-transform: uppercase; color: #64748b; margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #1e293b; margin-bottom: 15px; }
+    .card { background: var(--card); padding: 16px; margin-bottom: 12px; border-radius: 10px; border: 1px solid #334155; cursor: grab; position: relative; }
+    .card:hover { border-color: #475569; background: #242f42; }
+    .card b { font-size: 15px; display: block; margin-bottom: 4px; }
+    .card small { color: #94a3b8; font-size: 12px; }
+    .usd-tag { color: var(--green); font-weight: 800; margin-top: 10px; display: block; font-size: 14px; }
   </style>
 </head>
 <body>
 
 <header>
-  <h1 style="font-size: 18px; letter-spacing: 1px;">GF DESARROLLOS <span style="color:#3b82f6">PRO</span></h1>
-  <button onclick="logout()" style="background:var(--red); border:none; color:white; padding:8px 15px; border-radius:6px; cursor:pointer;">Cerrar Sesión</button>
+  <h1 style="font-size: 18px; letter-spacing: 1px;">GF DESARROLLOS <span style="color:var(--accent)">PRO</span></h1>
+  <button onclick="logout()" style="background:var(--red); border:none; color:white; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;">Cerrar Sesión</button>
 </header>
 
 <div class="stats-bar">
@@ -38,8 +43,8 @@
 
 <div class="container">
   <div class="form-box">
-    <input id="leadNombre" placeholder="Cliente / Proyecto">
-    <input id="leadEmpresa" placeholder="Empresa (Uber type, etc)">
+    <input id="leadNombre" placeholder="Nombre del Cliente">
+    <input id="leadEmpresa" placeholder="Tipo de Proyecto / Empresa">
     <input id="leadMonto" type="number" placeholder="Monto USD">
     <button class="btn-add" onclick="crearLead()">+ AGREGAR LEAD</button>
   </div>
@@ -48,7 +53,7 @@
     <div class="col" id="col-nuevo"><h3>📥 Nuevo</h3></div>
     <div class="col" id="col-reunion"><h3>🤝 Reunión</h3></div>
     <div class="col" id="col-propuesta"><h3>📄 Propuesta</h3></div>
-    <div class="col" id="col-cerrado"><h3>✅ Cerrado (Proyecto)</h3></div>
+    <div class="col" id="col-cerrado"><h3>✅ Cerrado</h3></div>
   </div>
 </div>
 

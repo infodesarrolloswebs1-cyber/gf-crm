@@ -1,92 +1,140 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>GF CRM Dashboard</title>
+  <title>GF CRM</title>
 
   <style>
-body{
-  font-family: Arial;
-  background:#f1f3f7;
-  padding:20px;
-}
+    body{
+      margin:0;
+      font-family: Arial, Helvetica, sans-serif;
+      background:#eef1f6;
+    }
 
-.pipeline{
-  display:flex;
-  gap:20px;
-}
+    header{
+      background:#111827;
+      color:white;
+      padding:15px 25px;
+      font-size:20px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
 
-.col{
-  background:white;
-  padding:15px;
-  width:25%;
-  border-radius:12px;
-  box-shadow:0 4px 10px rgba(0,0,0,0.08);
-}
+    .container{
+      padding:20px;
+    }
 
-.card{
-  background:#fff;
-  padding:10px;
-  margin-bottom:10px;
-  border-radius:10px;
-  border:1px solid #ddd;
-}
-</style>
+    .pipeline{
+      display:flex;
+      gap:20px;
+      margin-top:20px;
+    }
 
+    .col{
+      background:white;
+      padding:15px;
+      width:25%;
+      border-radius:14px;
+      box-shadow:0 6px 18px rgba(0,0,0,0.08);
+      min-height:400px;
+    }
+
+    .col h3{
+      margin-top:0;
+    }
+
+    .card{
+      background:white;
+      padding:12px;
+      margin-bottom:12px;
+      border-radius:10px;
+      border:1px solid #e5e7eb;
+      box-shadow:0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .card button{
+      margin-right:5px;
+      margin-top:5px;
+      border:none;
+      background:#111827;
+      color:white;
+      padding:5px 8px;
+      border-radius:6px;
+      cursor:pointer;
+    }
+
+    .topbar{
+      display:flex;
+      gap:10px;
+      margin-bottom:15px;
+    }
+
+    input{
+      padding:8px;
+      border-radius:6px;
+      border:1px solid #ccc;
+    }
+
+    .total{
+      background:#111827;
+      color:white;
+      padding:10px;
+      border-radius:10px;
+      margin-bottom:15px;
+      display:inline-block;
+    }
+
+  </style>
 </head>
+
 <body>
 
-<h1>GF CRM DASHBOARD</h1>
+<header>
+  GF CRM
+  <button onclick="logout()">Cerrar sesión</button>
+</header>
 
-<button onclick="logout()">Cerrar sesión</button>
+<div class="container">
 
-<hr>
-
-<button onclick="crearCliente()">Crear cliente</button>
-
-  <h3>Clientes</h3>
-<div id="listaClientes"></div>
-
-<hr>
-
-<h2>PIPELINE VENTAS</h2>
-
-<div class="pipeline">
-
-  <div class="col" data-estado="nuevo">
-    <h3>Nuevo</h3>
-    <div class="dropzone" id="col-nuevo"></div>
+  <div class="total">
+    Total pipeline USD: <span id="totalUSD">0</span>
   </div>
 
-  <div class="col" data-estado="reunion">
-    <h3>Reunión</h3>
-    <div class="dropzone" id="col-reunion"></div>
+  <div class="topbar">
+    <input id="leadNombre" placeholder="Nombre">
+    <input id="leadEmpresa" placeholder="Empresa">
+    <input id="leadMonto" placeholder="USD">
+    <button onclick="crearLead()">Guardar lead</button>
   </div>
 
-  <div class="col" data-estado="propuesta">
-    <h3>Propuesta</h3>
-    <div class="dropzone" id="col-propuesta"></div>
-  </div>
+  <div class="pipeline">
 
-  <div class="col" data-estado="cerrado">
-    <h3>Cerrado</h3>
-    <div class="dropzone" id="col-cerrado"></div>
+    <div class="col">
+      <h3>Nuevo</h3>
+      <div id="col-nuevo"></div>
+    </div>
+
+    <div class="col">
+      <h3>Reunión</h3>
+      <div id="col-reunion"></div>
+    </div>
+
+    <div class="col">
+      <h3>Propuesta</h3>
+      <div id="col-propuesta"></div>
+    </div>
+
+    <div class="col">
+      <h3>Cerrado</h3>
+      <div id="col-cerrado"></div>
+    </div>
+
   </div>
 
 </div>
-
-<hr>
-
-<h2>Leads</h2>
-
-<input id="leadNombre" placeholder="Nombre">
-<input id="leadEmpresa" placeholder="Empresa">
-<input id="leadMonto" placeholder="Monto USD">
-
-<button onclick="crearLead()">Guardar lead</button>
-
-<div id="listaLeads"></div>
 
 <script type="module" src="dashboard.js"></script>
 
 </body>
 </html>
+

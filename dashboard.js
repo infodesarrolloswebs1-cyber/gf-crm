@@ -1,21 +1,13 @@
 import { db, auth } from "./firebase.js";
-import { 
-  collection, addDoc, getDocs, doc, updateDoc, getDoc 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { 
-  signOut, onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { collection, addDoc, getDocs, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// PROTEGER RUTA
 onAuthStateChanged(auth, (user) => {
   if (!user) window.location.href = "/";
   else cargarLeads();
 });
 
-window.logout = async () => {
-  await signOut(auth);
-  window.location.href = "/";
-};
+window.logout = () => signOut(auth).then(() => window.location.href = "/");
 
 // CREAR LEAD
 window.crearLead = async function () {
@@ -23,32 +15,27 @@ window.crearLead = async function () {
   const empresa = document.getElementById("leadEmpresa").value;
   const monto = document.getElementById("leadMonto").value;
 
-  if (!nombre || !monto) return alert("Ingresá nombre y monto");
+  if (!nombre || !monto) return alert("Faltan datos");
 
   await addDoc(collection(db, "leads"), {
-    nombre,
-    empresa,
-    monto: Number(monto),
-    estado: "nuevo",
-    fecha: new Date()
+    nombre, empresa, monto: Number(monto), estado: "nuevo", fecha: new Date()
   });
 
-  document.getElementById("leadNombre").value = "";
-  document.getElementById("leadEmpresa").value = "";
-  document.getElementById("leadMonto").value = "";
+  limpiarInputs();
   cargarLeads();
 };
 
-// CARGAR LEADS Y ACTUALIZAR KPIS
 async function cargarLeads() {
   const ids = ["nuevo", "reunion", "propuesta", "cerrado"];
   ids.forEach(id => {
     const el = document.getElementById("col-" + id);
-    if(el) el.innerHTML = `<h3>${id.toUpperCase()}</h3>`;
+    if(el) el.innerHTML = `<h3>${id}</h3>`;
   });
 
-  let totalPip = 0;
-  let ventasMes = 0;
+  const tablaOps = document.getElementById("tabla-proyectos");
+  if(tablaOps) tablaOps.innerHTML = "";
+
+  let totalPip = 0, ventasMes = 0, cashIn = 0;
 
   const querySnapshot = await getDocs(collection(db, "leads"));
 
@@ -59,6 +46,8 @@ async function cargarLeads() {
 
     if (d.estado === "cerrado") {
       ventasMes += monto;
+      cashIn += (monto * 0.5); // Simulación 50% inicial
+      agregarAOperaciones(d, id);
     } else {
       totalPip += monto;
     }
@@ -67,52 +56,62 @@ async function cargarLeads() {
     card.className = "card";
     card.draggable = true;
     card.dataset.id = id;
-    card.innerHTML = `
-      <b>${d.nombre}</b>
-      <small>${d.empresa || ''}</small>
-      <div class="usd-tag">USD ${monto.toLocaleString()}</div>
-    `;
+    card.innerHTML = `<b>${d.nombre}</b><br><small>${d.empresa}</small><br><span style="color:var(--green)">USD ${monto}</span>`;
 
     card.addEventListener("dragstart", (e) => e.dataTransfer.setData("id", id));
-    
     const col = document.getElementById("col-" + d.estado);
     if (col) col.appendChild(card);
   });
 
-  // ACTUALIZACIÓN DE INTERFAZ CON COMPROBACIÓN (Fix de los errores de consola)
-  const txtPip = document.getElementById("totalPipeline");
-  const txtVen = document.getElementById("ventasMes");
-  const txtRen = document.getElementById("rentabilidad");
+  actualizarUI(totalPip, ventasMes, cashIn);
+}
 
-  if(txtPip) txtPip.innerText = `USD ${totalPip.toLocaleString()}`;
-  if(txtVen) txtVen.innerText = `USD ${ventasMes.toLocaleString()}`;
+function agregarAOperaciones(data, id) {
+  const tabla = document.getElementById("tabla-proyectos");
+  if(!tabla) return;
+  const row = tabla.insertRow();
+  row.innerHTML = `
+    <td>${data.nombre}</td>
+    <td><span style="color:var(--accent)">Desarrollo</span></td>
+    <td>50% (Anticipo)</td>
+    <td>+90 días</td>
+    <td>USD ${data.monto * 0.5}</td>
+  `;
+}
+
+function actualizarUI(pip, ven, cash) {
+  const elPip = document.getElementById("totalPipeline");
+  const elVen = document.getElementById("ventasMes");
+  const elRen = document.getElementById("rentabilidad");
+  const elCash = document.getElementById("totalCobrado");
+  const elCom = document.getElementById("comisionesPend");
+
+  if(elPip) elPip.innerText = `USD ${pip.toLocaleString()}`;
+  if(elVen) elVen.innerText = `USD ${ven.toLocaleString()}`;
+  if(elCash) elCash.innerText = `USD ${cash.toLocaleString()}`;
+  if(elCom) elCom.innerText = `USD ${(ven * 0.1).toLocaleString()}`;
   
-  if(txtRen) {
-    const costoFijo = 4400;
-    const rent = ventasMes > 0 ? (((ventasMes - costoFijo) / ventasMes) * 100).toFixed(0) : 0;
-    txtRen.innerText = `${rent}%`;
-    txtRen.style.color = rent < 0 ? "#ef4444" : "#22c55e";
+  if(elRen) {
+    const rent = ven > 0 ? (((ven - 4400) / ven) * 100).toFixed(0) : 0;
+    elRen.innerText = `${rent}%`;
   }
 }
 
 // DRAG & DROP
-["nuevo","reunion","propuesta","cerrado"].forEach((estado) => {
+["nuevo","reunion","propuesta","cerrado"].forEach(estado => {
   const col = document.getElementById("col-" + estado);
   if(!col) return;
-
-  col.addEventListener("dragover", (e) => e.preventDefault());
-  col.addEventListener("drop", async (e) => {
+  col.addEventListener("dragover", e => e.preventDefault());
+  col.addEventListener("drop", async e => {
     e.preventDefault();
     const id = e.dataTransfer.getData("id");
-    const ref = doc(db, "leads", id);
-
-    await updateDoc(ref, { estado: estado });
-
-    // Lógica Financiera: Si cerramos, notificamos
-    if(estado === "cerrado") {
-        console.log("Venta convertida a Proyecto");
-    }
-
+    await updateDoc(doc(db, "leads", id), { estado });
     cargarLeads();
   });
 });
+
+function limpiarInputs() {
+  document.getElementById("leadNombre").value = "";
+  document.getElementById("leadEmpresa").value = "";
+  document.getElementById("leadMonto").value = "";
+}

@@ -1,22 +1,50 @@
-import { db } from "./firebase.js";
+import { db, auth } from "./firebase.js";
 
 import {
   collection,
-  getDocs,
   addDoc,
-  updateDoc,
-  doc
+  getDocs,
+  doc,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+import {
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// =============================
+
+// ===============================
+// PROTEGER DASHBOARD
+// ===============================
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    window.location.href = "/";
+  } else {
+    cargarLeads();
+  }
+});
+
+
+// ===============================
+// LOGOUT
+// ===============================
+window.logout = async function () {
+  await signOut(auth);
+  window.location.href = "/";
+};
+
+
+// ===============================
 // CREAR LEAD
-// =============================
+// ===============================
 window.crearLead = async function () {
 
   const nombre = document.getElementById("leadNombre").value;
   const empresa = document.getElementById("leadEmpresa").value;
   const monto = document.getElementById("leadMonto").value;
+
+  if (!nombre || !monto) return;
 
   await addDoc(collection(db, "leads"), {
     nombre,
@@ -26,68 +54,87 @@ window.crearLead = async function () {
     fecha: new Date()
   });
 
+  document.getElementById("leadNombre").value = "";
+  document.getElementById("leadEmpresa").value = "";
+  document.getElementById("leadMonto").value = "";
+
   cargarLeads();
 };
 
 
-// =============================
+// ===============================
 // CARGAR LEADS
-// =============================
+// ===============================
 async function cargarLeads() {
+
+  document.getElementById("col-nuevo").innerHTML = "<h3>Nuevo</h3>";
+  document.getElementById("col-reunion").innerHTML = "<h3>Reunión</h3>";
+  document.getElementById("col-propuesta").innerHTML = "<h3>Propuesta</h3>";
+  document.getElementById("col-cerrado").innerHTML = "<h3>Cerrado</h3>";
 
   let total = 0;
 
-  document.getElementById("col-nuevo").innerHTML = "";
-  document.getElementById("col-reunion").innerHTML = "";
-  document.getElementById("col-propuesta").innerHTML = "";
-  document.getElementById("col-cerrado").innerHTML = "";
+  const querySnapshot = await getDocs(collection(db, "leads"));
 
-  const snap = await getDocs(collection(db, "leads"));
-
-  snap.forEach(docSnap => {
+  querySnapshot.forEach((docSnap) => {
 
     const d = docSnap.data();
     const id = docSnap.id;
 
-    total += d.monto;
+    if (d.estado !== "cerrado") {
+      total += Number(d.monto);
+    }
 
-    const card = `
-  <div class="card">
-    <b>${d.nombre}</b><br>
-    ${d.empresa}
-    <div class="usd">USD ${d.monto}</div>
+    const card = document.createElement("div");
+    card.className = "card";
+    card.draggable = true;
+    card.dataset.id = id;
 
-    <button onclick="mover('${id}','nuevo')">Nuevo</button>
-    <button onclick="mover('${id}','reunion')">Reunión</button>
-    <button onclick="mover('${id}','propuesta')">Propuesta</button>
-    <button onclick="mover('${id}','cerrado')">Cerrar</button>
-  </div>
-`;
+    card.innerHTML = `
+      <b>${d.nombre}</b><br>
+      ${d.empresa || ""}<br>
+      <div class="usd">USD ${d.monto}</div>
+    `;
 
+    // DRAG START
+    card.addEventListener("dragstart", (e) => {
+      e.dataTransfer.setData("id", id);
+    });
 
     const col = document.getElementById("col-" + d.estado);
-if (col) col.innerHTML += card;
-
-
+    col.appendChild(card);
   });
 
   document.getElementById("totalUSD").innerText = total;
 }
 
 
-// =============================
-// MOVER ESTADO
-// =============================
-window.mover = async function (id, estado) {
+// ===============================
+// DRAG & DROP
+// ===============================
+const columnas = ["nuevo","reunion","propuesta","cerrado"];
 
-  const ref = doc(db, "leads", id);
+columnas.forEach((estado) => {
 
-  await updateDoc(ref, {
-    estado: estado
+  const col = document.getElementById("col-" + estado);
+
+  col.addEventListener("dragover", (e) => {
+    e.preventDefault();
   });
 
-  cargarLeads();
-};
+  col.addEventListener("drop", async (e) => {
+    e.preventDefault();
 
-cargarLeads();
+    const id = e.dataTransfer.getData("id");
+
+    const ref = doc(db, "leads", id);
+
+    await updateDoc(ref, {
+      estado: estado
+    });
+
+    cargarLeads();
+  });
+
+});
 

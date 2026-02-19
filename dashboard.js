@@ -35,6 +35,8 @@ window.crearLead = async function () {
 // =============================
 async function cargarLeads() {
 
+  let total = 0;
+
   document.getElementById("col-nuevo").innerHTML = "";
   document.getElementById("col-reunion").innerHTML = "";
   document.getElementById("col-propuesta").innerHTML = "";
@@ -46,6 +48,8 @@ async function cargarLeads() {
 
     const d = docSnap.data();
     const id = docSnap.id;
+
+    total += d.monto;
 
     const card = `
       <div class="card">
@@ -63,6 +67,8 @@ async function cargarLeads() {
     if (col) col.innerHTML += card;
 
   });
+
+  document.getElementById("totalUSD").innerText = total;
 }
 
 

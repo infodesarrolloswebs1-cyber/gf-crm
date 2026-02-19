@@ -1,17 +1,115 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <title>GF CRM Login</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GF DESARROLLOS - Acceso al Sistema</title>
+    <style>
+        :root { --bg: #020617; --card: #0f172a; --accent: #3b82f6; --text: #ffffff; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        
+        .login-card { background: var(--card); padding: 40px; border-radius: 20px; border: 1px solid #1e293b; width: 100%; max-width: 380px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        h2 { color: var(--accent); margin-bottom: 10px; font-size: 24px; font-weight: 800; }
+        p { color: #94a3b8; font-size: 14px; margin-bottom: 30px; }
+        
+        .form-group { text-align: left; margin-bottom: 20px; }
+        label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
+        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #020617; color: white; box-sizing: border-box; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--accent); }
+        
+        button { width: 100%; padding: 14px; border-radius: 8px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 14px; }
+        button:hover { background: #2563eb; transform: translateY(-2px); }
+        
+        #error-msg { color: #ef4444; font-size: 13px; margin-top: 20px; min-height: 20px; }
+        .loader { display: none; margin: 10px auto; border: 3px solid #1e293b; border-top: 3px solid var(--accent); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
 
-<h1>Login CRM</h1>
+<div class="login-card">
+    <h2>GF DESARROLLOS</h2>
+    <p>Ingresá tus credenciales corporativas</p>
+    
+    <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="user-email" placeholder="nombre@gfdesarrollos.com">
+    </div>
+    
+    <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="user-pass" placeholder="••••••••">
+    </div>
+    
+    <button onclick="handleLogin()" id="login-btn">INGRESAR AL PANEL</button>
+    <div class="loader" id="loader"></div>
+    <div id="error-msg"></div>
+</div>
 
-<input id="email" placeholder="Email">
-<input id="pass" type="password" placeholder="Password">
-<button onclick="login()">Entrar</button>
+<script type="module">
+    import { auth, db } from "./firebase.js";
+    import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-<script type="module" src="app.js"></script>
+    window.handleLogin = async () => {
+        const email = document.getElementById("user-email").value;
+        const pass = document.getElementById("user-pass").value;
+        const errorEl = document.getElementById("error-msg");
+        const loader = document.getElementById("loader");
+        const btn = document.getElementById("login-btn");
+
+        if(!email || !pass) {
+            errorEl.innerText = "Por favor, completa todos los campos.";
+            return;
+        }
+
+        // UI Feedback
+        errorEl.innerText = "";
+        loader.style.display = "block";
+        btn.style.display = "none";
+
+        try {
+            // 1. Autenticar en Firebase
+            const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+            const user = userCredential.user;
+
+            // 2. Buscar el ROL en Firestore usando el UID (como lo configuraste en la captura)
+            // IMPORTANTE: Tu colección se llama 'clientes' según la captura, pero para roles deberías usar la que creaste recién.
+            // Si la colección de roles la llamaste 'usuarios', cambiá "clientes" por "usuarios" abajo.
+            const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                const rol = userData.rol;
+
+                // 3. Redirección basada en el campo 'rol' (string)
+                if (rol === "director") {
+                    window.location.href = "director.html";
+                } else if (rol === "comercial") {
+                    window.location.href = "comercial.html";
+                } else if (rol === "cto") {
+                    window.location.href = "cto.html";
+                } else {
+                    errorEl.innerText = "Rol no reconocido. Contacta al administrador.";
+                }
+            } else {
+                errorEl.innerText = "No se encontró perfil de usuario en la base de datos.";
+                await auth.signOut(); // Cerramos sesión si no hay documento
+            }
+
+        } catch (error) {
+            console.error(error);
+            if(error.code === 'auth/invalid-credential') {
+                errorEl.innerText = "Email o contraseña incorrectos.";
+            } else {
+                errorEl.innerText = "Error de conexión. Reintentá en unos momentos.";
+            }
+        } finally {
+            loader.style.display = "none";
+            btn.style.display = "block";
+        }
+    };
+</script>
 
 </body>
 </html>

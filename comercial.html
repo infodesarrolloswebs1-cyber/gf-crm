@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GF - Panel Comercial</title>
+    <title>GF - Panel Comercial v5.0</title>
     <style>
         :root { --bg: #020617; --sidebar: #0f172a; --accent: #3b82f6; --green: #22c55e; --card: #1e293b; --red: #ef4444; --text-dim: #94a3b8; }
         body { margin:0; font-family: 'Inter', sans-serif; display: flex; height: 100vh; background: var(--bg); color: white; overflow: hidden; }
@@ -23,7 +23,8 @@
         .stat-card h2 { margin: 8px 0 0; color: var(--green); }
 
         .form-box { background: #020617; padding: 20px; border-radius: 12px; margin-bottom: 30px; display: flex; gap: 10px; border: 1px solid #1e293b; flex-wrap: wrap; }
-        input { padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; flex: 1; min-width: 150px; }
+        input, textarea { padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; flex: 1; min-width: 150px; }
+        textarea { width: 100%; min-height: 80px; resize: none; }
         .btn-main { background: var(--accent); border: none; color: white; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
         .pipeline { display: flex; gap: 15px; align-items: flex-start; }
@@ -36,6 +37,10 @@
         table { width: 100%; border-collapse: collapse; background: var(--sidebar); border-radius: 15px; overflow: hidden; border: 1px solid #1e293b; }
         th { text-align: left; padding: 15px; background: #1e293b; color: var(--text-dim); font-size: 12px; }
         td { padding: 15px; border-bottom: 1px solid #1e293b; font-size: 14px; }
+
+        /* MODAL DETALLES */
+        #modalLead { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:2000; align-items:center; justify-content:center; }
+        .modal-content { background:var(--sidebar); padding:30px; border-radius:20px; width:500px; border:1px solid var(--accent); }
     </style>
 </head>
 <body>
@@ -56,9 +61,11 @@
         </div>
         
         <div class="form-box">
-            <input id="newCliente" placeholder="Cliente Validado">
+            <input id="newCliente" placeholder="Nombre del Cliente">
+            <input id="newEmpresa" placeholder="Empresa / Razón Social">
             <input id="newMonto" type="number" placeholder="Presupuesto USD">
-            <button class="btn-main" onclick="agregarLead()">+ AGREGAR AL CRM</button>
+            <textarea id="newIdea" placeholder="Descripción de la Idea (desde WhatsApp)"></textarea>
+            <button class="btn-main" onclick="agregarLead()" style="width:100%; margin-top:10px;">+ AGREGAR AL CRM</button>
         </div>
 
         <div class="pipeline">
@@ -85,6 +92,25 @@
         </table>
     </div>
 </main>
+
+<div id="modalLead">
+    <div class="modal-content">
+        <h3 id="mNombre">Detalles del Lead</h3>
+        <p><strong>Empresa:</strong> <span id="mEmpresa"></span></p>
+        <p><strong>Idea Original:</strong></p>
+        <div id="mIdea" style="background:#020617; padding:15px; border-radius:10px; margin-bottom:20px; font-size:14px; color:var(--text-dim); max-height: 150px; overflow-y: auto;"></div>
+        
+        <div id="areaValidacion" style="border-top:1px solid #334155; padding-top:20px;">
+            <p id="mInstrucciones" style="color:var(--accent); font-weight:bold; margin-bottom:15px;"></p>
+            <input id="mLinkPDF" placeholder="Link al PDF de Propuesta Técnica" style="display:none; width:95%; margin-bottom:15px; padding:12px; border-radius:8px; background:#020617; color:white; border:1px solid #334155;">
+            
+            <div style="display:flex; gap:10px; justify-content: center;">
+                <button class="btn-main" id="btnAvanzar">AVANZAR ESTADO</button>
+                <button class="btn-main" style="background:#475569" onclick="cerrarModal()">CERRAR</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script type="module" src="comercial.js"></script>
 <script>

@@ -52,19 +52,22 @@ async function cargarLeads() {
     total += d.monto;
 
     const card = `
-      <div class="card">
-        <b>${d.nombre}</b><br>
-        ${d.empresa}<br>
-        USD ${d.monto}<br><br>
+  <div class="card">
+    <b>${d.nombre}</b><br>
+    ${d.empresa}
+    <div class="usd">USD ${d.monto}</div>
 
-        <button onclick="mover('${id}','reunion')">Reunión</button>
-        <button onclick="mover('${id}','propuesta')">Propuesta</button>
-        <button onclick="mover('${id}','cerrado')">Cerrar</button>
-      </div>
-    `;
+    <button onclick="mover('${id}','nuevo')">Nuevo</button>
+    <button onclick="mover('${id}','reunion')">Reunión</button>
+    <button onclick="mover('${id}','propuesta')">Propuesta</button>
+    <button onclick="mover('${id}','cerrado')">Cerrar</button>
+  </div>
+`;
+
 
     const col = document.getElementById("col-" + d.estado);
-    if (col) col.innerHTML += card;
+if (col) col.innerHTML += card;
+
 
   });
 

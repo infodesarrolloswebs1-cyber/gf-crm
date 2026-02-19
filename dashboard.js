@@ -1,49 +1,79 @@
 import { db, auth } from "./firebase.js";
-import { collection, addDoc, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, addDoc, getDocs, doc, updateDoc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 onAuthStateChanged(auth, (user) => { if (!user) window.location.href = "/"; else cargarSistema(); });
 
 window.logout = () => signOut(auth).then(() => window.location.href = "/");
 
+// --- CONFIGURACIÓN ---
 window.guardarConfig = () => {
   localStorage.setItem("cfg_ticket", document.getElementById("cfgTicket").value);
   localStorage.setItem("cfg_costos", document.getElementById("cfgCostos").value);
   localStorage.setItem("cfg_ads", document.getElementById("cfgAds").value);
-  alert("Configuración Guardada");
+  alert("Configuración actualizada");
+  cargarSistema();
+};
+
+function initConfig() {
+  if(!localStorage.getItem("cfg_ticket")) {
+    localStorage.setItem("cfg_ticket", 16000);
+    localStorage.setItem("cfg_costos", 4400);
+    localStorage.setItem("cfg_ads", 1500);
+  }
+  document.getElementById("cfgTicket").value = localStorage.getItem("cfg_ticket");
+  document.getElementById("cfgCostos").value = localStorage.getItem("cfg_costos");
+  document.getElementById("cfgAds").value = localStorage.getItem("cfg_ads");
+}
+
+// --- LOGICA DE COBROS E HISTORIAL ---
+window.cobrarHito = async function(id, hitoActual, montoTotal, clienteNombre) {
+  let nuevoMonto = 0, nuevoHito = "", pagoRecibido = 0;
+  
+  if(hitoActual === "0%") { nuevoHito = "50%"; pagoRecibido = montoTotal * 0.5; nuevoMonto = pagoRecibido; }
+  else if(hitoActual === "50%") { nuevoHito = "80%"; pagoRecibido = montoTotal * 0.3; nuevoMonto = montoTotal * 0.8; }
+  else if(hitoActual === "80%") { nuevoHito = "100%"; pagoRecibido = montoTotal * 0.2; nuevoMonto = montoTotal; }
+
+  // 1. Actualizar Lead
+  await updateDoc(doc(db, "leads", id), { hito: nuevoHito, pagado: nuevoMonto });
+
+  // 2. Registrar en Historial de Pagos
+  await addDoc(collection(db, "pagos"), {
+    cliente: clienteNombre,
+    monto: pagoRecibido,
+    hito: nuevoHito,
+    fecha: new Date(),
+    metodo: "Transferencia USD"
+  });
+
   cargarSistema();
 };
 
 async function cargarSistema() {
-  // Init Config
-  const ticket = localStorage.getItem("cfg_ticket") || 16000;
-  const costos = localStorage.getItem("cfg_costos") || 4400;
-  const ads = localStorage.getItem("cfg_ads") || 1500;
-  
-  document.getElementById("cfgTicket").value = ticket;
-  document.getElementById("cfgCostos").value = costos;
-  document.getElementById("cfgAds").value = ads;
-
-  // Limpiar UI
+  initConfig();
   const ids = ["nuevo", "reunion", "propuesta", "cerrado"];
-  ids.forEach(id => document.getElementById("col-" + id).innerHTML = `<h3>${id.toUpperCase()}</h3>`);
+  ids.forEach(id => { const el = document.getElementById("col-" + id); if(el) el.innerHTML = `<h3>${id.toUpperCase()}</h3>`; });
   document.getElementById("tabla-proyectos").innerHTML = "";
   document.getElementById("tabla-pagos-historial").innerHTML = "";
 
   let totalPip = 0, ventasMes = 0, cashIn = 0, leadsCount = 0, cierresCount = 0;
 
-  // Leads
+  // Cargar Leads
   const snapLeads = await getDocs(collection(db, "leads"));
   leadsCount = snapLeads.size;
   snapLeads.forEach(docSnap => {
     const d = docSnap.data();
     const m = Number(d.monto) || 0;
-    if(d.estado === "cerrado") { ventasMes += m; cierresCount++; renderProyecto(d, docSnap.id); } 
-    else { totalPip += m; }
+    if(d.estado === "cerrado") {
+      ventasMes += m; cierresCount++;
+      renderProyecto(d, docSnap.id);
+    } else {
+      totalPip += m;
+    }
     renderCard(d, docSnap.id);
   });
 
-  // Pagos
+  // Cargar Pagos Reales
   const snapPagos = await getDocs(query(collection(db, "pagos"), orderBy("fecha", "desc")));
   snapPagos.forEach(p => {
     const pd = p.data();
@@ -51,7 +81,7 @@ async function cargarSistema() {
     renderPagoHistorial(pd);
   });
 
-  actualizarDash(totalPip, ventasMes, cashIn, leadsCount, cierresCount, ticket, costos, ads);
+  actualizarDash(totalPip, ventasMes, cashIn, leadsCount, cierresCount);
 }
 
 function renderCard(d, id) {
@@ -59,7 +89,8 @@ function renderCard(d, id) {
   card.className = "card"; card.draggable = true; card.dataset.id = id;
   card.innerHTML = `<b>${d.nombre}</b><br><small>${d.empresa}</small><br><span style="color:var(--green)">USD ${d.monto.toLocaleString()}</span>`;
   card.addEventListener("dragstart", e => e.dataTransfer.setData("id", id));
-  document.getElementById("col-" + d.estado).appendChild(card);
+  const col = document.getElementById("col-" + d.estado);
+  if(col) col.appendChild(card);
 }
 
 function renderProyecto(d, id) {
@@ -72,26 +103,19 @@ function renderProyecto(d, id) {
 
 function renderPagoHistorial(pd) {
   const row = document.getElementById("tabla-pagos-historial").insertRow();
-  row.innerHTML = `<td>${pd.fecha.toDate().toLocaleDateString()}</td><td>${pd.cliente}</td><td>USD ${pd.monto.toLocaleString()}</td><td>${pd.hito}</td><td>Transferencia</td>`;
+  row.innerHTML = `<td>${pd.fecha.toDate().toLocaleDateString()}</td><td>${pd.cliente}</td><td>USD ${pd.monto.toLocaleString()}</td><td>${pd.hito}</td><td>${pd.metodo}</td>`;
 }
 
-window.cobrarHito = async function(id, hito, total, cliente) {
-  let np = 0, nh = "", rec = 0;
-  if(hito === "0%") { nh = "50%"; rec = total * 0.5; np = rec; }
-  else if(hito === "50%") { nh = "80%"; rec = total * 0.3; np = total * 0.8; }
-  else if(hito === "80%") { nh = "100%"; rec = total * 0.2; np = total; }
+function actualizarDash(pip, ven, cash, leads, cierres) {
+  const ticket = Number(localStorage.getItem("cfg_ticket"));
+  const costos = Number(localStorage.getItem("cfg_costos"));
+  const ads = Number(localStorage.getItem("cfg_ads"));
 
-  await updateDoc(doc(db, "leads", id), { hito: nh, pagado: np });
-  await addDoc(collection(db, "pagos"), { cliente, monto: rec, hito: nh, fecha: new Date() });
-  cargarSistema();
-};
-
-function actualizarDash(pip, ven, cash, leads, cierres, ticket, costos, ads) {
   document.getElementById("totalPipeline").innerText = `USD ${pip.toLocaleString()}`;
   document.getElementById("ventasMes").innerText = `USD ${ven.toLocaleString()}`;
   document.getElementById("totalCobrado").innerText = `USD ${cash.toLocaleString()}`;
   document.getElementById("comisionesPend").innerText = `USD ${(cash * 0.1).toLocaleString()}`;
-  document.getElementById("invActual").innerText = `USD ${Number(ads).toLocaleString()}`;
+  document.getElementById("invActual").innerText = `USD ${ads.toLocaleString()}`;
   
   const activos = document.querySelectorAll("#tabla-proyectos tr").length;
   document.getElementById("capacidadCarga").innerText = `${activos}/5`;
@@ -99,16 +123,16 @@ function actualizarDash(pip, ven, cash, leads, cierres, ticket, costos, ads) {
   const rent = ven > 0 ? (((ven - costos - ads) / ven) * 100).toFixed(0) : 0;
   document.getElementById("rentabilidad").innerText = `${rent}%`;
 
-  // Simulador
+  // Simulador Legendario
   const meta = 100000;
   const cierresNec = Math.ceil(meta / ticket);
   const leadsNec = cierres > 0 ? Math.ceil((leads / cierres) * cierresNec) : 0;
   const invNec = leadsNec * (leads > 0 ? (ads / leads) : 0);
 
   document.getElementById("resultadoSimulador").innerHTML = `
-    • Meta: <b>USD 100.000</b> | Cierres nec: <b>${cierresNec}</b><br>
-    • Leads nec: <b>${leadsNec}</b> | Inversión Ads rec: <b style="color:var(--green)">USD ${invNec.toLocaleString()}</b><br>
-    • CAC: <b>USD ${(cierres > 0 ? ads/cierres : 0).toFixed(0)}</b> | ROAS: <b>${(ads > 0 ? ven/ads : 0).toFixed(1)}x</b>
+    • Para facturar <b>USD 100.000</b> necesitas <b>${cierresNec} cierres</b> de USD ${ticket.toLocaleString()}.<br>
+    • Requiere atraer <b>${leadsNec} leads</b>. Inversión Ads recomendada: <b style="color:var(--green)">USD ${invNec.toLocaleString()}</b>.<br>
+    • CAC Actual: <b>USD ${(cierres > 0 ? ads/cierres : 0).toFixed(0)}</b> | ROAS: <b>${(ads > 0 ? ven/ads : 0).toFixed(1)}x</b>
   `;
 }
 

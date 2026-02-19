@@ -79,23 +79,35 @@ window.crearLead = async function () {
 
 async function cargarLeads() {
 
-  const cont = document.getElementById("listaLeads");
-  cont.innerHTML = "";
+  document.getElementById("col-nuevo").innerHTML = "";
+  document.getElementById("col-reunion").innerHTML = "";
+  document.getElementById("col-propuesta").innerHTML = "";
+  document.getElementById("col-cerrado").innerHTML = "";
 
   const querySnapshot = await getDocs(collection(db, "leads"));
 
-  querySnapshot.forEach((doc) => {
+  querySnapshot.forEach((docSnap) => {
 
-    const d = doc.data();
+    const d = docSnap.data();
+    const id = docSnap.id;
 
-    cont.innerHTML += `
+    const card = `
       <div style="border:1px solid black; padding:10px; margin:5px">
-        <b>${d.nombre}</b> - ${d.empresa}
+        <b>${d.nombre}</b>
+        <br>
+        ${d.empresa}
         <br>
         USD ${d.monto}
-        <br>
-        Estado: ${d.estado}
+        <br><br>
+
+        <button onclick="mover('${id}','reunion')">Reunión</button>
+        <button onclick="mover('${id}','propuesta')">Propuesta</button>
+        <button onclick="mover('${id}','cerrado')">Cerrar</button>
       </div>
     `;
+
+    document.getElementById("col-" + d.estado).innerHTML += card;
+
   });
 }
+

@@ -3,7 +3,9 @@ import { db, auth } from "./firebase.js";
 import {
   collection,
   addDoc,
-  getDocs
+  getDocs,
+  doc,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 import {
@@ -12,7 +14,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 
+// =========================
 // PROTEGER DASHBOARD
+// =========================
 onAuthStateChanged(auth, (user) => {
   if (!user) {
     window.location.href = "/";
@@ -23,7 +27,9 @@ onAuthStateChanged(auth, (user) => {
 });
 
 
+// =========================
 // LOGOUT
+// =========================
 window.logout = async function () {
   await signOut(auth);
   window.location.href = "/";
@@ -33,8 +39,8 @@ window.logout = async function () {
 // =========================
 // CLIENTES
 // =========================
-
 window.crearCliente = async function () {
+
   await addDoc(collection(db, "clientes"), {
     nombre: "cliente real",
     fecha: new Date()
@@ -43,22 +49,29 @@ window.crearCliente = async function () {
   cargarClientes();
 };
 
+
 async function cargarClientes() {
+
   const cont = document.getElementById("listaClientes");
   cont.innerHTML = "";
 
   const querySnapshot = await getDocs(collection(db, "clientes"));
 
-  querySnapshot.forEach((doc) => {
-    cont.innerHTML += `<div>${doc.data().nombre}</div>`;
+  querySnapshot.forEach((docSnap) => {
+    const d = docSnap.data();
+
+    cont.innerHTML += `
+      <div style="border:1px solid gray; padding:6px; margin:4px">
+        ${d.nombre}
+      </div>
+    `;
   });
 }
 
 
 // =========================
-// LEADS
+// CREAR LEAD
 // =========================
-
 window.crearLead = async function () {
 
   const nombre = document.getElementById("leadNombre").value;
@@ -77,6 +90,9 @@ window.crearLead = async function () {
 };
 
 
+// =========================
+// CARGAR LEADS EN PIPELINE
+// =========================
 async function cargarLeads() {
 
   document.getElementById("col-nuevo").innerHTML = "";
@@ -92,7 +108,7 @@ async function cargarLeads() {
     const id = docSnap.id;
 
     const card = `
-      <div style="border:1px solid black; padding:10px; margin:5px">
+      <div style="border:1px solid black; padding:10px; margin:5px; background:#f5f5f5">
         <b>${d.nombre}</b>
         <br>
         ${d.empresa}
@@ -106,8 +122,24 @@ async function cargarLeads() {
       </div>
     `;
 
-    document.getElementById("col-" + d.estado).innerHTML += card;
+    const col = document.getElementById("col-" + d.estado);
+    if (col) col.innerHTML += card;
 
   });
 }
+
+
+// =========================
+// MOVER LEAD DE ESTADO
+// =========================
+window.mover = async function (id, estado) {
+
+  const ref = doc(db, "leads", id);
+
+  await updateDoc(ref, {
+    estado: estado
+  });
+
+  cargarLeads();
+};
 

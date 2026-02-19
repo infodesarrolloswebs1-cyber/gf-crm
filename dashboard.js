@@ -1,141 +1,69 @@
-import { db, auth } from "./firebase.js";
-
+import { db } from "./firebase.js";
 import {
   collection,
-  addDoc,
   getDocs,
-  doc,
-  updateDoc
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  addDoc,
+  updateDoc,
+  doc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import {
-  signOut,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-
-// =================
-// AUTH
-// =================
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    window.location.href = "/";
-  } else {
-    cargarClientes();
-    cargarLeads();
-  }
-});
-
-
-// =================
-// LOGOUT
-// =================
-window.logout = async function () {
-  await signOut(auth);
-  window.location.href = "/";
-};
-
-
-// =================
-// CLIENTES
-// =================
 window.crearCliente = async function () {
-
-  await addDoc(collection(db, "clientes"), {
-    nombre: "cliente real",
-    fecha: new Date()
-  });
-
-  cargarClientes();
-};
-
-async function cargarClientes() {
-
-  const cont = document.getElementById("listaClientes");
-  cont.innerHTML = "";
-
-  const querySnapshot = await getDocs(collection(db, "clientes"));
-
-  querySnapshot.forEach((docSnap) => {
-    const d = docSnap.data();
-
-    cont.innerHTML += `
-      <div style="border:1px solid gray;padding:6px;margin:4px">
-        ${d.nombre}
-      </div>
-    `;
-  });
-}
-
-
-// =================
-// CREAR LEAD
-// =================
-window.crearLead = async function () {
-
-  const nombre = document.getElementById("leadNombre").value;
-  const empresa = document.getElementById("leadEmpresa").value;
-  const monto = document.getElementById("leadMonto").value;
+  const nombre = prompt("Nombre");
+  const empresa = prompt("Empresa");
+  const monto = prompt("Monto USD");
 
   await addDoc(collection(db, "leads"), {
     nombre,
     empresa,
     monto: Number(monto),
-    estado: "nuevo",
-    fecha: new Date()
+    estado: "nuevo"
   });
 
   cargarLeads();
 };
 
-
-// =================
-// CARGAR LEADS
-// =================
 async function cargarLeads() {
-
-  document.getElementById("col-nuevo").innerHTML = "";
-  document.getElementById("col-reunion").innerHTML = "";
-  document.getElementById("col-propuesta").innerHTML = "";
-  document.getElementById("col-cerrado").innerHTML = "";
+  document.querySelectorAll(".dropzone").forEach(z => z.innerHTML = "");
 
   const querySnapshot = await getDocs(collection(db, "leads"));
 
   querySnapshot.forEach((docSnap) => {
-
     const d = docSnap.data();
     const id = docSnap.id;
 
-    const card = `
-      <div style="border:1px solid black;padding:10px;margin:5px;background:#f5f5f5">
-        <b>${d.nombre}</b><br>
-        ${d.empresa}<br>
-        USD ${d.monto}<br><br>
+    const card = document.createElement("div");
+    card.className = "card";
+    card.draggable = true;
+    card.dataset.id = id;
 
-        <button onclick="window.mover('${id}','reunion')">Reunión</button>
-        <button onclick="window.mover('${id}','propuesta')">Propuesta</button>
-        <button onclick="window.mover('${id}','cerrado')">Cerrar</button>
-      </div>
+    card.innerHTML = `
+      <b>${d.nombre}</b><br>
+      ${d.empresa}<br>
+      USD ${d.monto}
     `;
 
-    const col = document.getElementById("col-" + d.estado);
-    if (col) col.innerHTML += card;
+    card.addEventListener("dragstart", e => {
+      e.dataTransfer.setData("id", id);
+    });
 
+    document.getElementById("col-" + d.estado).appendChild(card);
   });
 }
 
+document.querySelectorAll(".dropzone").forEach(zone => {
+  zone.addEventListener("dragover", e => e.preventDefault());
 
-// =================
-// MOVER ESTADO
-// =================
-window.mover = async function (id, estado) {
+  zone.addEventListener("drop", async e => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("id");
+    const nuevoEstado = zone.parentElement.dataset.estado;
 
-  const ref = doc(db, "leads", id);
+    await updateDoc(doc(db, "leads", id), {
+      estado: nuevoEstado
+    });
 
-  await updateDoc(ref, {
-    estado: estado
+    cargarLeads();
   });
+});
 
-  cargarLeads();
-};
-
+cargarLeads();

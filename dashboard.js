@@ -14,9 +14,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 
-// =========================
-// PROTEGER DASHBOARD
-// =========================
+// =================
+// AUTH
+// =================
 onAuthStateChanged(auth, (user) => {
   if (!user) {
     window.location.href = "/";
@@ -27,18 +27,18 @@ onAuthStateChanged(auth, (user) => {
 });
 
 
-// =========================
+// =================
 // LOGOUT
-// =========================
+// =================
 window.logout = async function () {
   await signOut(auth);
   window.location.href = "/";
 };
 
 
-// =========================
+// =================
 // CLIENTES
-// =========================
+// =================
 window.crearCliente = async function () {
 
   await addDoc(collection(db, "clientes"), {
@@ -48,7 +48,6 @@ window.crearCliente = async function () {
 
   cargarClientes();
 };
-
 
 async function cargarClientes() {
 
@@ -61,7 +60,7 @@ async function cargarClientes() {
     const d = docSnap.data();
 
     cont.innerHTML += `
-      <div style="border:1px solid gray; padding:6px; margin:4px">
+      <div style="border:1px solid gray;padding:6px;margin:4px">
         ${d.nombre}
       </div>
     `;
@@ -69,9 +68,9 @@ async function cargarClientes() {
 }
 
 
-// =========================
+// =================
 // CREAR LEAD
-// =========================
+// =================
 window.crearLead = async function () {
 
   const nombre = document.getElementById("leadNombre").value;
@@ -90,9 +89,9 @@ window.crearLead = async function () {
 };
 
 
-// =========================
-// CARGAR LEADS EN PIPELINE
-// =========================
+// =================
+// CARGAR LEADS
+// =================
 async function cargarLeads() {
 
   document.getElementById("col-nuevo").innerHTML = "";
@@ -108,17 +107,14 @@ async function cargarLeads() {
     const id = docSnap.id;
 
     const card = `
-      <div style="border:1px solid black; padding:10px; margin:5px; background:#f5f5f5">
-        <b>${d.nombre}</b>
-        <br>
-        ${d.empresa}
-        <br>
-        USD ${d.monto}
-        <br><br>
+      <div style="border:1px solid black;padding:10px;margin:5px;background:#f5f5f5">
+        <b>${d.nombre}</b><br>
+        ${d.empresa}<br>
+        USD ${d.monto}<br><br>
 
-        <button onclick="mover('${id}','reunion')">Reunión</button>
-        <button onclick="mover('${id}','propuesta')">Propuesta</button>
-        <button onclick="mover('${id}','cerrado')">Cerrar</button>
+        <button onclick="window.mover('${id}','reunion')">Reunión</button>
+        <button onclick="window.mover('${id}','propuesta')">Propuesta</button>
+        <button onclick="window.mover('${id}','cerrado')">Cerrar</button>
       </div>
     `;
 
@@ -129,9 +125,9 @@ async function cargarLeads() {
 }
 
 
-// =========================
-// MOVER LEAD DE ESTADO
-// =========================
+// =================
+// MOVER ESTADO
+// =================
 window.mover = async function (id, estado) {
 
   const ref = doc(db, "leads", id);

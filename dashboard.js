@@ -1,126 +1,142 @@
 import { db, auth } from "./firebase.js";
-import { collection, addDoc, getDocs, doc, updateDoc, query, orderBy, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { collection, addDoc, getDocs, doc, updateDoc, getDoc, query, orderBy, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-let leadPendienteId = null;
+let leadActualId = null;
 
-onAuthStateChanged(auth, (user) => { if (user) cargarDatos(); else window.location.href = "/"; });
+onAuthStateChanged(auth, (user) => { if (!user) window.location.href = "/"; else cargarSistema(); });
 window.logout = () => signOut(auth).then(() => window.location.href = "/");
 
-// --- WORKFLOW VALIDADO ---
-window.gestionarPaso = async (id, estadoActual, d) => {
-    leadPendienteId = id;
-    const modal = document.getElementById("modalWorkflow");
-    const inputs = document.getElementById("mInputs");
-    const inst = document.getElementById("mInstrucciones");
-    const btn = document.getElementById("btnConfirmar");
-
-    inputs.innerHTML = "";
-    modal.style.display = "flex";
-    document.getElementById("mLeadNombre").innerText = d.nombre;
-
-    if (estadoActual === "nuevo") {
-        inst.innerText = "¿Meet con Fede y Luis realizada? Sube el link al PDF Técnico.";
-        inputs.innerHTML = `<input id="valLink" placeholder="Link al PDF">`;
-        btn.onclick = () => procesarPaso("consultoria", "valLink");
-    } 
-    else if (estadoActual === "consultoria") {
-        inst.innerText = "¿Mariano confirmó el interés de avanzar?";
-        btn.onclick = () => procesarPaso("contrato", null);
-    }
-    else if (estadoActual === "contrato") {
-        inst.innerText = "Firma ante escribano y abono del 50%.";
-        inputs.innerHTML = `<select id="valMedio"><option>Transferencia</option><option>Efectivo</option></select>`;
-        btn.onclick = () => procesarPagoInicial(d);
-    }
+// --- CONFIGURACIÓN ---
+window.guardarConfig = () => {
+  localStorage.setItem("cfg_vendedor", document.getElementById("cfgVendedor").value);
+  localStorage.setItem("cfg_ticket", document.getElementById("cfgTicket").value);
+  localStorage.setItem("cfg_costos", document.getElementById("cfgCostos").value);
+  alert("Configuración Guardada");
+  cargarSistema();
 };
 
-async function procesarPaso(nuevoEstado, inputId) {
-    const val = inputId ? document.getElementById(inputId).value : "OK";
-    if (!val) return alert("Dato requerido");
-    await updateDoc(doc(db, "leads", leadPendienteId), { estado: nuevoEstado });
-    document.getElementById("modalWorkflow").style.display = "none";
-    cargarDatos();
-}
+// --- MODAL Y LOGS ---
+window.abrirModal = async (id) => {
+  leadActualId = id;
+  const snap = await getDoc(doc(db, "leads", id));
+  const d = snap.data();
+  document.getElementById("mLeadNombre").innerText = d.nombre + " - USD " + d.monto;
+  const hist = document.getElementById("mHistorial");
+  hist.innerHTML = "";
+  (d.logs || []).reverse().forEach(l => {
+    hist.innerHTML += `<div class="log-entry"><b>${l.fecha} - ${l.tipo}:</b> ${l.link ? `<a href="${l.link}" target="_blank" style="color:var(--accent)">Ver Link</a>` : 'Sin link'}</div>`;
+  });
+  document.getElementById("modalLead").style.display = "flex";
+};
 
-async function procesarPagoInicial(d) {
-    const medio = document.getElementById("valMedio").value;
-    const monto = d.monto * 0.5;
-    await updateDoc(doc(db, "leads", leadPendienteId), { estado: "produccion", pagado: monto, etapaProd: "Diseño", hito: "50%" });
-    await addDoc(collection(db, "pagos"), { cliente: d.nombre, monto, hito: "50% (Firma)", medio, fecha: new Date() });
-    document.getElementById("modalWorkflow").style.display = "none";
-    cargarDatos();
-}
+window.agregarLog = async () => {
+  const tipo = document.getElementById("mTipoAccion").value;
+  const link = document.getElementById("mLink").value;
+  const fecha = new Date().toLocaleString();
+  
+  await updateDoc(doc(db, "leads", leadActualId), {
+    logs: arrayUnion({ tipo, link, fecha })
+  });
+  
+  document.getElementById("mLink").value = "";
+  abrirModal(leadActualId); // Recargar modal
+};
 
-async function cargarDatos() {
-    const ids = ["nuevo", "consultoria", "contrato", "produccion"];
-    ids.forEach(id => { const el = document.getElementById("col-" + id); if(el) el.innerHTML = `<h3>${id.toUpperCase()}</h3>`; });
-    
-    const tOps = document.querySelector("#tabla-proyectos tbody");
-    const tFin = document.querySelector("#tabla-pagos tbody");
-    if(tOps) tOps.innerHTML = "";
-    if(tFin) tFin.innerHTML = "";
+// --- CARGA GENERAL ---
+async function cargarSistema() {
+  const vName = localStorage.getItem("cfg_vendedor") || "Comercial 1";
+  document.getElementById("cfgVendedor").value = vName;
+  document.getElementById("cfgTicket").value = localStorage.getItem("cfg_ticket") || 16000;
+  document.getElementById("cfgCostos").value = localStorage.getItem("cfg_costos") || 4400;
 
-    let totalPip = 0, ventasMes = 0, cashIn = 0;
+  const ids = ["nuevo", "reunion", "propuesta", "cerrado"];
+  ids.forEach(id => document.getElementById("col-" + id).innerHTML = `<h3>${id.toUpperCase()}</h3>`);
+  document.getElementById("tabla-proyectos").querySelector("tbody").innerHTML = "";
+  document.getElementById("tabla-comisiones-vendedor").querySelector("tbody").innerHTML = "";
+  
+  let totalPip = 0, ventasMes = 0, cashIn = 0, comPagada = 0, comPendiente = 0;
 
-    const snapLeads = await getDocs(collection(db, "leads"));
-    snapLeads.forEach(docSnap => {
-        const d = docSnap.data();
-        const id = docSnap.id;
-        if (d.estado === "produccion") { 
-            ventasMes += d.monto; 
-            renderProyecto(d, id); 
-        } else { totalPip += d.monto; }
-        renderCard(d, id);
-    });
+  const snapLeads = await getDocs(collection(db, "leads"));
+  snapLeads.forEach(docSnap => {
+    const d = docSnap.data();
+    const id = docSnap.id;
+    const m = Number(d.monto) || 0;
+    const pag = Number(d.pagado) || 0;
 
-    const snapPagos = await getDocs(query(collection(db, "pagos"), orderBy("fecha", "desc")));
-    snapPagos.forEach(p => { 
-        const pd = p.data(); 
-        cashIn += pd.monto; 
-        if(tFin) tFin.innerHTML += `<tr><td>${pd.fecha.toDate().toLocaleDateString()}</td><td>${pd.cliente}</td><td>USD ${pd.monto}</td><td>${pd.hito}</td><td>${pd.medio}</td></tr>`;
-    });
+    if(d.estado === "cerrado") {
+      ventasMes += m;
+      renderProyecto(d, id);
+      // Cálculo Comisión (10%)
+      const cTotal = m * 0.1;
+      const cPagada = pag * 0.1;
+      comPagada += cPagada;
+      comPendiente += (cTotal - cPagada);
+      renderComision(d.nombre, m, pag, cPagada, (cTotal - cPagada));
+    } else {
+      totalPip += m;
+    }
+    renderCard(d, id);
+  });
 
-    document.getElementById("totalPipeline").innerText = `USD ${totalPip.toLocaleString()}`;
-    document.getElementById("ventasMes").innerText = `USD ${ventasMes.toLocaleString()}`;
-    document.getElementById("totalCobrado").innerText = `USD ${cashIn.toLocaleString()}`;
-    document.getElementById("capacidadCarga").innerText = `${document.querySelectorAll("#tabla-proyectos tbody tr").length}/5`;
+  const snapPagos = await getDocs(query(collection(db, "pagos"), orderBy("fecha", "desc")));
+  document.getElementById("tabla-pagos-historial").querySelector("tbody").innerHTML = "";
+  snapPagos.forEach(p => {
+    const pd = p.data();
+    cashIn += pd.monto;
+    const row = document.getElementById("tabla-pagos-historial").querySelector("tbody").insertRow();
+    row.innerHTML = `<td>${pd.fecha.toDate().toLocaleDateString()}</td><td>${pd.cliente}</td><td>USD ${pd.monto.toLocaleString()}</td><td>${pd.hito}</td>`;
+  });
+
+  actualizarDash(totalPip, ventasMes, cashIn, comPagada, comPendiente);
 }
 
 function renderCard(d, id) {
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `<b>${d.nombre}</b><br><small>${d.empresa}</small><br><span style="color:var(--green)">USD ${d.monto}</span>`;
-    card.onclick = () => window.gestionarPaso(id, d.estado, d);
-    document.getElementById("col-" + d.estado).appendChild(card);
+  const card = document.createElement("div");
+  card.className = "card"; card.innerHTML = `<b>${d.nombre}</b><br><small>${d.empresa}</small><br><span style="color:var(--green)">USD ${d.monto.toLocaleString()}</span>`;
+  card.onclick = () => abrirModal(id);
+  document.getElementById("col-" + d.estado).appendChild(card);
 }
 
 function renderProyecto(d, id) {
-    const t = document.querySelector("#tabla-proyectos tbody");
-    const etapa = d.etapaProd || "Diseño";
-    t.innerHTML += `<tr><td>${d.nombre}</td><td>${etapa}</td><td>${d.hito || '50%'}</td>
-    <td><button class="btn-main" onclick="avanzarHitoProd('${id}', '${etapa}', ${d.monto})">Cobrar Próximo</button></td></tr>`;
+  const row = document.getElementById("tabla-proyectos").querySelector("tbody").insertRow();
+  row.innerHTML = `<td>${d.nombre}</td><td>${d.hito || '0%'}</td><td><progress value="${parseInt(d.hito || 0)}" max="100"></progress></td><td>90 Días</td><td><button class="btn-main" style="padding:5px 10px" onclick="window.cobrarHitoJS('${id}', '${d.hito || '0%'}', ${d.monto}, '${d.nombre}')">Cobrar</button></td>`;
 }
 
-window.avanzarHitoProd = async (id, etapa, total) => {
-    let ne = "", nh = "", nm = 0;
-    if (etapa === "Diseño") { ne = "Desarrollo"; nh = "80%"; nm = total * 0.3; }
-    else if (etapa === "Desarrollo") { ne = "Testing"; nh = "100%"; nm = total * 0.2; }
-    if (!ne) return alert("Proyecto Finalizado");
+function renderComision(cli, total, pagCli, comPag, comPend) {
+  const row = document.getElementById("tabla-comisiones-vendedor").querySelector("tbody").insertRow();
+  row.innerHTML = `<td>${cli}</td><td>USD ${total.toLocaleString()}</td><td>USD ${pagCli.toLocaleString()}</td><td style="color:var(--green)">USD ${comPag.toLocaleString()}</td><td style="color:#f59e0b">USD ${comPend.toLocaleString()}</td>`;
+}
 
-    const medio = prompt("Medio de pago (Transferencia/Efectivo):");
-    if (!medio) return;
-
-    await updateDoc(doc(db, "leads", id), { etapaProd: ne, hito: nh });
-    await addDoc(collection(db, "pagos"), { cliente: "ID: "+id, monto: nm, hito: nh, medio, fecha: new Date() });
-    cargarDatos();
+window.cobrarHitoJS = async (id, hito, total, cliente) => {
+  let np = 0, nh = "", rec = 0;
+  if(hito === "0%") { nh = "50%"; rec = total * 0.5; np = rec; }
+  else if(hito === "50%") { nh = "80%"; rec = total * 0.3; np = total * 0.8; }
+  else if(hito === "80%") { nh = "100%"; rec = total * 0.2; np = total; }
+  await updateDoc(doc(db, "leads", id), { hito: nh, pagado: np });
+  await addDoc(collection(db, "pagos"), { cliente, monto: rec, hito: nh, fecha: new Date() });
+  cargarSistema();
 };
 
+function actualizarDash(pip, ven, cash, cPag, cPend) {
+  document.getElementById("totalPipeline").innerText = `USD ${pip.toLocaleString()}`;
+  document.getElementById("ventasMes").innerText = `USD ${ven.toLocaleString()}`;
+  document.getElementById("totalCobrado").innerText = `USD ${cash.toLocaleString()}`;
+  document.getElementById("comisCobrada").innerText = `USD ${cPag.toLocaleString()}`;
+  document.getElementById("comisPendiente").innerText = `USD ${cPend.toLocaleString()}`;
+  
+  const activos = document.querySelectorAll("#tabla-proyectos tbody tr").length;
+  document.getElementById("capacidadCarga").innerText = `${activos}/5`;
+  const costs = Number(localStorage.getItem("cfg_costos")) || 4400;
+  const rent = ven > 0 ? (((ven - costs) / ven) * 100).toFixed(0) : 0;
+  document.getElementById("rentabilidad").innerText = `${rent}%`;
+}
+
 window.crearLead = async () => {
-    const n = document.getElementById("leadNombre").value;
-    const e = document.getElementById("leadEmpresa").value;
-    const m = document.getElementById("leadMonto").value;
-    if(!n || !m) return;
-    await addDoc(collection(db, "leads"), { nombre: n, empresa: e, monto: Number(m), estado: "nuevo", fecha: new Date() });
-    cargarDatos();
+  const n = document.getElementById("leadNombre").value;
+  const e = document.getElementById("leadEmpresa").value;
+  const m = document.getElementById("leadMonto").value;
+  if(!n || !m) return;
+  await addDoc(collection(db, "leads"), { nombre: n, empresa: e, monto: Number(m), estado: "nuevo", hito: "0%", pagado: 0, fecha: new Date(), logs: [] });
+  cargarSistema();
 };

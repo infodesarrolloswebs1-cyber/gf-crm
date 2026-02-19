@@ -1,31 +1,42 @@
 import { db, auth } from "./firebase.js";
-import { collection, addDoc, getDocs, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { 
+  collection, addDoc, getDocs, doc, updateDoc, getDoc 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { 
+  signOut, onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+// SEGURIDAD: REDIRECCIÓN SI NO HAY SESIÓN
 onAuthStateChanged(auth, (user) => {
   if (!user) window.location.href = "/";
-  else cargarLeads();
+  else cargarSistema();
 });
 
 window.logout = () => signOut(auth).then(() => window.location.href = "/");
 
-// CREAR LEAD
+// --- LOGICA CRM ---
 window.crearLead = async function () {
   const nombre = document.getElementById("leadNombre").value;
   const empresa = document.getElementById("leadEmpresa").value;
   const monto = document.getElementById("leadMonto").value;
 
-  if (!nombre || !monto) return alert("Faltan datos");
+  if (!nombre || !monto) return alert("Por favor, completa Nombre y Monto.");
 
   await addDoc(collection(db, "leads"), {
-    nombre, empresa, monto: Number(monto), estado: "nuevo", fecha: new Date()
+    nombre,
+    empresa,
+    monto: Number(monto),
+    estado: "nuevo",
+    fecha: new Date(),
+    pagado: 0,
+    hito: "0%"
   });
 
   limpiarInputs();
-  cargarLeads();
+  cargarSistema();
 };
 
-async function cargarLeads() {
+async function cargarSistema() {
   const ids = ["nuevo", "reunion", "propuesta", "cerrado"];
   ids.forEach(id => {
     const el = document.getElementById("col-" + id);
@@ -35,7 +46,7 @@ async function cargarLeads() {
   const tablaOps = document.getElementById("tabla-proyectos");
   if(tablaOps) tablaOps.innerHTML = "";
 
-  let totalPip = 0, ventasMes = 0, cashIn = 0;
+  let totalPip = 0, ventasMes = 0, cashInReal = 0;
 
   const querySnapshot = await getDocs(collection(db, "leads"));
 
@@ -46,58 +57,92 @@ async function cargarLeads() {
 
     if (d.estado === "cerrado") {
       ventasMes += monto;
-      cashIn += (monto * 0.5); // Simulación 50% inicial
-      agregarAOperaciones(d, id);
+      cashInReal += (d.pagado || 0);
+      renderizarProyecto(d, id);
     } else {
       totalPip += monto;
     }
 
+    // Render en CRM
     const card = document.createElement("div");
     card.className = "card";
     card.draggable = true;
     card.dataset.id = id;
-    card.innerHTML = `<b>${d.nombre}</b><br><small>${d.empresa}</small><br><span style="color:var(--green)">USD ${monto}</span>`;
+    card.innerHTML = `
+      <b>${d.nombre}</b><br>
+      <small style="color:var(--text-dim)">${d.empresa}</small><br>
+      <div style="margin-top:10px; font-weight:bold; color:var(--green)">USD ${monto.toLocaleString()}</div>
+    `;
 
     card.addEventListener("dragstart", (e) => e.dataTransfer.setData("id", id));
     const col = document.getElementById("col-" + d.estado);
     if (col) col.appendChild(card);
   });
 
-  actualizarUI(totalPip, ventasMes, cashIn);
+  actualizarIndicadores(totalPip, ventasMes, cashInReal);
 }
 
-function agregarAOperaciones(data, id) {
+// --- LOGICA OPERACIONES (COO) ---
+function renderizarProyecto(data, id) {
   const tabla = document.getElementById("tabla-proyectos");
   if(!tabla) return;
+
+  const hito = data.hito || "Pendiente";
+  const fecha = data.fecha ? data.fecha.toDate() : new Date();
+  fecha.setDate(fecha.getDate() + 90);
+
   const row = tabla.insertRow();
   row.innerHTML = `
-    <td>${data.nombre}</td>
-    <td><span style="color:var(--accent)">Desarrollo</span></td>
-    <td>50% (Anticipo)</td>
-    <td>+90 días</td>
-    <td>USD ${data.monto * 0.5}</td>
+    <td><b>${data.nombre}</b><br><small>${data.empresa}</small></td>
+    <td><span class="status-badge">${hito} Cobrado</span></td>
+    <td><progress value="${parseInt(hito)}" max="100" style="width:80px;"></progress></td>
+    <td>${fecha.toLocaleDateString()}</td>
+    <td>
+      ${hito !== "100%" ? 
+        `<button class="btn-hito" onclick="ejecutarCobro('${id}', '${hito}', ${data.monto})">Cobrar Hito</button>` 
+        : '<span style="color:var(--green)">🏁 Completado</span>'}
+    </td>
   `;
 }
 
-function actualizarUI(pip, ven, cash) {
-  const elPip = document.getElementById("totalPipeline");
-  const elVen = document.getElementById("ventasMes");
-  const elRen = document.getElementById("rentabilidad");
-  const elCash = document.getElementById("totalCobrado");
-  const elCom = document.getElementById("comisionesPend");
+window.ejecutarCobro = async function(id, hitoActual, total) {
+  let nuevoMonto = 0;
+  let nuevoHito = "";
 
-  if(elPip) elPip.innerText = `USD ${pip.toLocaleString()}`;
-  if(elVen) elVen.innerText = `USD ${ven.toLocaleString()}`;
-  if(elCash) elCash.innerText = `USD ${cash.toLocaleString()}`;
-  if(elCom) elCom.innerText = `USD ${(ven * 0.1).toLocaleString()}`;
+  if(hitoActual === "0%" || hitoActual === "Pendiente") { nuevoMonto = total * 0.50; nuevoHito = "50%"; }
+  else if(hitoActual === "50%") { nuevoMonto = total * 0.80; nuevoHito = "80%"; }
+  else if(hitoActual === "80%") { nuevoMonto = total; nuevoHito = "100%"; }
+
+  await updateDoc(doc(db, "leads", id), {
+    pagado: nuevoMonto,
+    hito: nuevoHito
+  });
+
+  cargarSistema();
+};
+
+// --- LOGICA FINANZAS (CFO) ---
+function actualizarIndicadores(pip, ven, cash) {
+  const set = (id, val) => { 
+    const el = document.getElementById(id); 
+    if(el) el.innerText = val; 
+  };
+
+  set("totalPipeline", `USD ${pip.toLocaleString()}`);
+  set("ventasMes", `USD ${ven.toLocaleString()}`);
+  set("totalCobrado", `USD ${cash.toLocaleString()}`);
+  set("comisionesPend", `USD ${(cash * 0.10).toLocaleString()}`);
+  set("fondoReserva", `USD ${(cash * 0.20).toLocaleString()}`);
   
+  const elRen = document.getElementById("rentabilidad");
   if(elRen) {
     const rent = ven > 0 ? (((ven - 4400) / ven) * 100).toFixed(0) : 0;
     elRen.innerText = `${rent}%`;
+    elRen.style.color = rent < 20 ? "var(--red)" : "var(--green)";
   }
 }
 
-// DRAG & DROP
+// --- DRAG & DROP ---
 ["nuevo","reunion","propuesta","cerrado"].forEach(estado => {
   const col = document.getElementById("col-" + estado);
   if(!col) return;
@@ -106,7 +151,7 @@ function actualizarUI(pip, ven, cash) {
     e.preventDefault();
     const id = e.dataTransfer.getData("id");
     await updateDoc(doc(db, "leads", id), { estado });
-    cargarLeads();
+    cargarSistema();
   });
 });
 

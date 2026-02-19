@@ -1,13 +1,17 @@
-import { auth } from "./firebase.js";
-import { signInWithEmailAndPassword } 
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { db } from "./firebase.js";
+import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-window.login = async function(){
+window.crearCliente = async function () {
+  try {
+    await addDoc(collection(db, "clientes"), {
+      nombre: "Cliente prueba",
+      email: "test@mail.com",
+      fecha: new Date()
+    });
 
-  let email = document.getElementById("email").value;
-  let pass = document.getElementById("pass").value;
-
-  await signInWithEmailAndPassword(auth,email,pass)
-
-  alert("Login OK")
-}
+    alert("Cliente guardado en Firebase 🚀");
+  } catch (e) {
+    console.error(e);
+    alert("Error");
+  }
+};

@@ -9,61 +9,49 @@
         
         body { margin:0; font-family: 'Inter', sans-serif; display: flex; height: 100vh; background: var(--bg); color: white; overflow: hidden; }
         
-        /* Navegación Lateral */
         nav { width: 260px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 25px; shrink: 0; }
         nav h2 { font-size: 18px; margin-bottom: 30px; color: var(--accent); font-weight: 800; }
         nav button { background: none; border: none; color: var(--text-dim); padding: 12px; text-align: left; cursor: pointer; border-radius: 10px; margin-bottom: 8px; transition: 0.3s; font-weight: 500; }
         nav button.active { background: var(--card); color: white; border-left: 4px solid var(--accent); }
         nav button:hover { background: #1e293b; color: white; }
 
-        /* Contenedor Principal */
         main { flex: 1; overflow-y: auto; padding: 40px; scroll-behavior: smooth; }
         .section { display: none; animation: fadeIn 0.3s ease-in-out; }
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Estadísticas Rápidas */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 35px; }
-        .stat-card { background: var(--card); padding: 22px; border-radius: 15px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        .stat-card span { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
+        .stat-card { background: var(--card); padding: 22px; border-radius: 15px; border: 1px solid var(--border); }
+        .stat-card span { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: bold; }
         .stat-card h2 { margin: 8px 0 0; color: var(--green); font-size: 28px; }
 
-        /* Formulario de Carga */
         .form-container { background: var(--card); padding: 30px; border-radius: 20px; border: 1px solid var(--border); margin-bottom: 40px; }
         .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
         .full-row { grid-column: span 2; }
         .form-section-title { grid-column: span 2; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin: 20px 0 10px; color: var(--accent); font-size: 13px; font-weight: 800; text-transform: uppercase; }
         
         label { display: block; font-size: 11px; color: var(--text-dim); font-weight: bold; margin-bottom: 8px; text-transform: uppercase; }
-        input, textarea, select { padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; color: white; width: 100%; box-sizing: border-box; transition: 0.3s; }
-        input:focus, textarea:focus { border-color: var(--accent); outline: none; background: #1e293b; }
-        textarea { min-height: 100px; resize: none; }
+        input, textarea, select { padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; color: white; width: 100%; box-sizing: border-box; }
+        textarea { min-height: 80px; resize: none; }
 
-        /* Botones */
-        .btn-main { background: var(--accent); border: none; color: white; padding: 16px; border-radius: 10px; cursor: pointer; font-weight: 800; width: 100%; margin-top: 20px; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; }
-        .btn-main:hover { background: #2563eb; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+        .btn-main { background: var(--accent); border: none; color: white; padding: 16px; border-radius: 10px; cursor: pointer; font-weight: 800; width: 100%; margin-top: 20px; text-transform: uppercase; }
+        .btn-main:hover { background: #2563eb; transform: translateY(-2px); }
 
-        /* Pipeline */
         .pipeline { display: flex; gap: 20px; align-items: flex-start; }
         .col { flex: 1; background: #020617; padding: 15px; border-radius: 18px; border: 1px solid var(--border); min-height: 600px; }
-        .col h3 { font-size: 12px; color: var(--text-dim); text-transform: uppercase; border-bottom: 2px solid var(--sidebar); padding-bottom: 15px; margin-bottom: 20px; text-align: center; font-weight: 800; }
+        .col h3 { font-size: 12px; color: var(--text-dim); text-transform: uppercase; border-bottom: 2px solid var(--sidebar); padding-bottom: 15px; margin-bottom: 20px; text-align: center; }
         
         .card { background: var(--card); padding: 18px; margin-bottom: 15px; border-radius: 12px; border: 1px solid var(--border); cursor: pointer; transition: 0.3s; }
-        .card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4); }
-        .card b { font-size: 15px; display: block; margin-bottom: 5px; }
+        .card:hover { border-color: var(--accent); transform: translateY(-3px); }
 
-        /* Estilos de TABLAS (Mejorado para Comisiones y Fábrica) */
         .table-container { background: var(--card); border-radius: 20px; border: 1px solid var(--border); overflow: hidden; }
         table { width: 100%; border-collapse: collapse; text-align: left; }
         thead { background: #1e293b; }
-        th { padding: 18px; font-size: 12px; text-transform: uppercase; color: var(--accent); font-weight: 800; letter-spacing: 1px; }
-        td { padding: 18px; border-bottom: 1px solid var(--border); font-size: 14px; color: #e2e8f0; }
-        tr:last-child td { border-bottom: none; }
-        tr:hover td { background: rgba(59, 130, 246, 0.05); }
+        th { padding: 18px; font-size: 12px; text-transform: uppercase; color: var(--accent); font-weight: 800; }
+        td { padding: 18px; border-bottom: 1px solid var(--border); font-size: 14px; }
 
-        /* Modal */
         #modalLead { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(2, 6, 23, 0.95); z-index:2000; align-items:center; justify-content:center; }
-        .modal-content { background:var(--sidebar); padding:35px; border-radius:24px; width:650px; border: 1px solid var(--border); max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        .modal-content { background:var(--sidebar); padding:35px; border-radius:24px; width:650px; border: 1px solid var(--border); max-height: 85vh; overflow-y: auto; }
     </style>
 </head>
 <body>
@@ -87,22 +75,24 @@
             <h3>📝 Carga de Nuevo Proyecto</h3>
             <div class="form-grid">
                 <div class="form-section-title">Información del Cliente</div>
-                <div><label>Nombre Completo</label><input id="fNombre" placeholder="Ej: Bruno Campelleno"></div>
-                <div><label>WhatsApp Contacto</label><input id="fWhatsapp" placeholder="+54 9 ..."></div>
-                <div><label>Empresa / App</label><input id="fEmpresa" placeholder="Nombre del emprendimiento"></div>
-                <div><label>¿Decisión Unilateral?</label><select id="fSolo"><option value="si">Sí, decide solo</option><option value="no">No, tiene socios</option></select></div>
+                <div><label>Nombre Completo</label><input id="fNombre" placeholder="Bruno Campelleno"></div>
+                <div><label>WhatsApp</label><input id="fWhatsapp" placeholder="+54 9 ..."></div>
+                <div><label>Empresa / App</label><input id="fEmpresa" placeholder="Nombre de la app"></div>
+                <div><label>¿Decisión Sola?</label><select id="fSolo"><option value="si">Sí</option><option value="no">No</option></select></div>
+                <div><label>¿Socio?</label><select id="fSocio"><option value="no">No</option><option value="si">Sí</option></select></div>
                 <div><label>Provincia</label><input id="fProvincia" placeholder="Cordoba"></div>
                 <div><label>País</label><input id="fPais" placeholder="Argentina"></div>
-                <div><label>Presupuesto USD</label><input id="fMonto" type="number" placeholder="16000"></div>
+                <div><label>Monto USD</label><input id="fMonto" type="number" placeholder="16000"></div>
 
-                <div class="form-section-title">Blueprint Técnico</div>
-                <div class="full-row"><label>Tipo de Proyecto</label><input id="fTipo" placeholder="App Móvil / Marketplace / SaaS"></div>
-                <div class="full-row"><label>Problema a Resolver</label><textarea id="fProblema" placeholder="¿Qué dolor soluciona la app?"></textarea></div>
-                <div class="full-row"><label>Roles de Usuario</label><input id="fUsuarios" placeholder="Admin, Cliente, Chofer..."></div>
-                <div class="full-row"><label>Funciones Core</label><textarea id="fFunciones" placeholder="Listado de funciones principales..."></textarea></div>
-                <div class="full-row"><label>Integraciones Necesarias</label><input id="fIntegraciones" placeholder="Stripe, Google Maps, WhatsApp API..."></div>
-                <div class="full-row"><label>Competencia Directa</label><input id="fCompetencia" placeholder="¿Quién más hace esto en el mercado?"></div>
-                <div class="full-row"><label>Expectativa de Entrega</label><input id="fTiempo" placeholder="Ej: 6 meses (Le ofreceremos 90 días)"></div>
+                <div class="form-section-title">Detalles del Proyecto</div>
+                <div class="full-row"><label>Tipo de Proyecto</label><input id="fTipo" placeholder="App móvil"></div>
+                <div class="full-row"><label>Problema a Resolver</label><textarea id="fProblema"></textarea></div>
+                <div class="full-row"><label>Usuarios del Sistema</label><input id="fUsuarios" placeholder="Admin, Cliente, Conductor"></div>
+                <div class="full-row"><label>Plataformas</label><input id="fPlataformas" placeholder="iOS, Android, Panel"></div>
+                <div class="full-row"><label>Funciones Core</label><textarea id="fFunciones"></textarea></div>
+                <div class="full-row"><label>Integraciones</label><input id="fIntegraciones" placeholder="Maps, Pagos..."></div>
+                <div class="full-row"><label>Competencia</label><input id="fCompetencia" placeholder="Uber, Cabify"></div>
+                <div class="full-row"><label>Expectativa Entrega</label><input id="fTiempo" placeholder="6 meses"></div>
             </div>
             <button class="btn-main" onclick="agregarLead()">Finalizar y Cargar Lead</button>
         </div>
@@ -116,12 +106,9 @@
     </div>
 
     <div id="tab-comisiones" class="section">
-        <div class="stats-grid">
-            <div class="stat-card"><span>Comisiones Cobradas</span><h2 id="comTotal" style="color:var(--green)">USD 0</h2></div>
-        </div>
         <div class="table-container">
             <table>
-                <thead><tr><th>Cliente</th><th>Proyecto</th><th>Cobrado</th><th>Mi Comisión</th><th>Saldo Pendiente</th></tr></thead>
+                <thead><tr><th>Cliente</th><th>Monto Total</th><th>Cobrado</th><th>Mi Comisión</th><th>Saldo</th></tr></thead>
                 <tbody id="listaComisionesBody"></tbody>
             </table>
         </div>
@@ -130,12 +117,27 @@
     <div id="tab-status" class="section">
         <div class="table-container">
             <table>
-                <thead><tr><th>Cliente</th><th>Fase Actual</th><th>Hito Financiero</th><th>Notas del CTO</th></tr></thead>
+                <thead><tr><th>Cliente</th><th>Fase</th><th>Hito</th><th>Notas CTO</th></tr></thead>
                 <tbody id="listaStatusBody"></tbody>
             </table>
         </div>
     </div>
 </main>
+
+<div id="modalLead">
+    <div class="modal-content">
+        <h3 id="mNombre"></h3>
+        <div id="mDetalleTexto" style="font-size:14px; color:var(--text-dim)"></div>
+        <div id="areaValidacion" style="margin-top:20px; border-top:1px solid var(--border); padding-top:20px;">
+            <p id="mInstrucciones" style="color:var(--accent); font-weight:bold;"></p>
+            <input id="mLinkPDF" placeholder="Link Propuesta PDF" style="display:none; margin-bottom:15px;">
+            <div style="display:flex; gap:10px;">
+                <button class="btn-main" id="btnAvanzar" style="margin-top:0">AVANZAR</button>
+                <button class="btn-main" style="background:#475569; margin-top:0" onclick="cerrarModal()">CERRAR</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script type="module" src="comercial.js"></script>
 <script>

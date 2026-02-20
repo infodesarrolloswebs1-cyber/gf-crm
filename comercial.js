@@ -17,8 +17,9 @@ function escucharDatos() {
             const el = document.getElementById("col-" + id);
             if(el) el.innerHTML = `<h3>${id.toUpperCase()}</h3>`;
         });
-        document.querySelector("#listaComisiones tbody").innerHTML = "";
-        document.querySelector("#listaStatus tbody").innerHTML = "";
+        
+        document.getElementById("listaComisionesBody").innerHTML = "";
+        document.getElementById("listaStatusBody").innerHTML = "";
         let pipTotal = 0, ventasCount = 0;
 
         snap.forEach(docSnap => {
@@ -27,8 +28,8 @@ function escucharDatos() {
             if (d.estado === "produccion" || d.estado === "finalizado") {
                 ventasCount++;
                 const p = d.pagado || 0, m = d.monto || 0;
-                document.querySelector("#listaComisiones tbody").innerHTML += `<tr><td>${d.nombre}</td><td>USD ${m}</td><td>USD ${p}</td><td style="color:var(--green)">USD ${p*0.1}</td><td>USD ${(m-p)*0.1}</td></tr>`;
-                document.querySelector("#listaStatus tbody").innerHTML += `<tr><td>${d.nombre}</td><td>${d.etapaProd || "Espera"}</td><td>${d.hito || "50%"}</td><td>${d.notasCTO || "-"}</td></tr>`;
+                document.getElementById("listaComisionesBody").innerHTML += `<tr><td><b>${d.nombre}</b></td><td>USD ${m.toLocaleString()}</td><td>USD ${p.toLocaleString()}</td><td style="color:var(--green)">USD ${(p*0.1).toLocaleString()}</td><td>USD ${((m-p)*0.1).toLocaleString()}</td></tr>`;
+                document.getElementById("listaStatusBody").innerHTML += `<tr><td><b>${d.nombre}</b></td><td><span style="background:var(--accent); padding:4px 8px; border-radius:5px; font-size:12px;">${d.etapaProd || "Espera"}</span></td><td>${d.hito || "50%"}</td><td>${d.notasCTO || "-"}</td></tr>`;
             } else { pipTotal += Number(d.monto || 0); }
         });
         document.getElementById("pipTotal").innerText = `USD ${pipTotal.toLocaleString()}`;
@@ -53,13 +54,8 @@ window.abrirDetalles = (id, d) => {
     document.getElementById("mDetalleTexto").innerHTML = `
         <p><strong>WhatsApp:</strong> ${d.whatsapp || '-'}</p>
         <p><strong>Empresa/App:</strong> ${d.empresa || '-'}</p>
-        <p><strong>Ubicación:</strong> ${d.provincia}, ${d.pais}</p>
-        <p><strong>Problema:</strong> ${d.problema}</p>
-        <p><strong>Usuarios:</strong> ${d.usuariosSistema}</p>
-        <p><strong>Plataformas:</strong> ${d.plataformas}</p>
-        <p><strong>Funciones:</strong> ${d.funciones}</p>
-        <p><strong>Integraciones:</strong> ${d.integraciones}</p>
-        <p><strong>Competencia:</strong> ${d.competencia}</p>
+        <p><strong>Problema:</strong> ${d.problema || '-'}</p>
+        <p><strong>Plataformas:</strong> ${d.plataformas || '-'}</p>
     `;
     
     const btn = document.getElementById("btnAvanzar"), inputPDF = document.getElementById("mLinkPDF"), inst = document.getElementById("mInstrucciones");

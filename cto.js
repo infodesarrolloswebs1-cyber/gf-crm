@@ -18,8 +18,7 @@ function escucharProduccion() {
         let enCurso = 0, entregados = 0;
 
         snap.forEach(docSnap => {
-            const d = docSnap.data();
-            const id = docSnap.id;
+            const d = docSnap.data(), id = docSnap.id;
             if(d.estado === "produccion" || d.estado === "finalizado") {
                 if(d.etapaProd !== "Entregado") enCurso++;
                 else entregados++;
@@ -48,7 +47,20 @@ window.abrirProduccion = (id, d) => {
     idSeleccionado = id;
     document.getElementById("modalCTO").style.display = "flex";
     document.getElementById("pNombre").innerText = d.nombre;
-    document.getElementById("pIdea").innerText = d.idea || "Sin idea técnica.";
+    
+    // Ficha técnica completa para el CTO (Hoja de ruta)
+    document.getElementById("pIdea").innerHTML = `
+        <div style="background:#020617; padding:15px; border-radius:10px; font-size:13px; color:#e2e8f0; line-height:1.6;">
+            <p><strong style="color:var(--accent)">PROBLEMA:</strong> ${d.problema}</p>
+            <p><strong style="color:var(--accent)">USUARIOS:</strong> ${d.usuariosSistema}</p>
+            <p><strong style="color:var(--accent)">PLATAFORMAS:</strong> ${d.plataformas}</p>
+            <p><strong style="color:var(--accent)">FUNCIONES:</strong> ${d.funciones}</p>
+            <p><strong style="color:var(--accent)">INTEGRACIONES:</strong> ${d.integraciones}</p>
+            <p><strong style="color:var(--accent)">BRANDING:</strong> ${d.branding}</p>
+            <p><strong style="color:var(--accent)">LINK PROPUESTA:</strong> <a href="${d.linkPropuesta}" target="_blank" style="color:var(--green)">Ver PDF</a></p>
+        </div>
+    `;
+    
     document.getElementById("pNotas").value = d.notasCTO || "";
     const btn = document.getElementById("btnAvanzarTec"), formEntrega = document.getElementById("formEntrega");
     

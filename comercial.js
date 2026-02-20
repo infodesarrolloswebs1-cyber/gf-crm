@@ -54,11 +54,22 @@ window.abrirDetalles = (id, d) => {
     leadSeleccionadoId = id;
     document.getElementById("modalLead").style.display = "flex";
     document.getElementById("mNombre").innerText = d.nombre;
+    
+    // Ficha técnica completa para el Comercial y el CTO
     document.getElementById("mDetalleTexto").innerHTML = `
-        <p><strong>WhatsApp:</strong> ${d.whatsapp || '-'}</p>
-        <p><strong>Problema:</strong> ${d.problema || '-'}</p>
-        <p><strong>Plataformas:</strong> ${d.plataformas || '-'}</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; border-bottom:1px solid #334155; padding-bottom:15px; margin-bottom:15px;">
+            <div><label style="color:var(--accent); font-size:10px;">WHATSAPP</label><br>${d.whatsapp || '-'}</div>
+            <div><label style="color:var(--accent); font-size:10px;">EMPRESA</label><br>${d.empresa || '-'}</div>
+            <div><label style="color:var(--accent); font-size:10px;">UBICACIÓN</label><br>${d.provincia || '-'}, ${d.pais || '-'}</div>
+            <div><label style="color:var(--accent); font-size:10px;">DECISIÓN/SOCIO</label><br>Solo: ${d.decisionSolo} / Socio: ${d.socio}</div>
+        </div>
+        <p><strong>PROBLEMA A RESOLVER:</strong><br>${d.problema || '-'}</p>
+        <p><strong>PLATAFORMAS Y USUARIOS:</strong><br>${d.plataformas || '-'} (${d.usuariosSistema || '-'})</p>
+        <p><strong>FUNCIONES CORE:</strong><br>${d.funciones || '-'}</p>
+        <p><strong>INTEGRACIONES Y BRANDING:</strong><br>${d.integraciones || '-'} (Branding: ${d.branding})</p>
+        <p><strong>COMPETENCIA Y TIEMPO:</strong><br>${d.competencia || '-'} (Expectativa: ${d.tiempoEntregaCliente})</p>
     `;
+    
     const btn = document.getElementById("btnAvanzar"), inputPDF = document.getElementById("mLinkPDF"), inst = document.getElementById("mInstrucciones");
     btn.style.display = "block"; inputPDF.style.display = "none";
     if (d.avisoCobro) { inst.innerText = "Esperando validación CTR: " + d.avisoCobro; btn.style.display = "none"; }

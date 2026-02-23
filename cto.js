@@ -1,9 +1,9 @@
 import { db, auth } from "./firebase.js";
-import { collection, onSnapshot, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 let idSeleccionado = null;
-let historialActual = ""; // Para guardar lo que ya existía
+let historialActual = "";
 
 onAuthStateChanged(auth, (user) => {
     if (user) { escucharProduccion(); } 
@@ -45,14 +45,18 @@ window.abrirProduccion = (id, d) => {
     document.getElementById("modalCTO").style.display = "flex";
     document.getElementById("pNombre").innerText = d.nombre;
     
-    // Ficha técnica
+    // RESTAURACIÓN DE FICHA TÉCNICA COMPLETA
     document.getElementById("pIdea").innerHTML = `
-        <p><strong>PROBLEMA:</strong> ${d.problema || '-'}</p>
-        <p><strong>FUNCIONES:</strong> ${d.funciones || '-'}</p>
-        <p><strong>LINK:</strong> <a href="${d.linkPropuesta || '#'}" target="_blank" style="color:var(--green)">Ver PDF</a></p>
+        <p><strong style="color:var(--accent)">PROBLEMA:</strong> ${d.problema || '-'}</p>
+        <p><strong style="color:var(--accent)">USUARIOS:</strong> ${d.usuariosSistema || '-'}</p>
+        <p><strong style="color:var(--accent)">PLATAFORMAS:</strong> ${d.plataformas || '-'}</p>
+        <p><strong style="color:var(--accent)">FUNCIONES:</strong> ${d.funciones || '-'}</p>
+        <p><strong style="color:var(--accent)">INTEGRACIONES:</strong> ${d.integraciones || '-'}</p>
+        <p><strong style="color:var(--accent)">BRANDING:</strong> ${d.branding || '-'}</p>
+        <p><strong style="color:var(--accent)">LINK:</strong> <a href="${d.linkPropuesta || '#'}" target="_blank" style="color:var(--green)">Ver PDF</a></p>
     `;
 
-    // RENDERIZAR HISTORIAL EN MODO LISTA
+    // Render historial
     const container = document.getElementById("listaHistorial");
     container.innerHTML = "";
     if(historialActual) {
@@ -60,7 +64,6 @@ window.abrirProduccion = (id, d) => {
             if(linea.trim()){
                 const div = document.createElement("div");
                 div.className = "nota-item";
-                // Separamos la fecha del texto si existe el formato [fecha]
                 div.innerHTML = linea.replace('[', '<span class="nota-fecha">').replace(']', '</span>');
                 container.appendChild(div);
             }
@@ -69,7 +72,7 @@ window.abrirProduccion = (id, d) => {
         container.innerHTML = '<div style="color:gray; font-style:italic;">Sin anotaciones previas...</div>';
     }
 
-    document.getElementById("pNotas").value = ""; // Limpiamos el campo para la nueva nota
+    document.getElementById("pNotas").value = "";
     
     const btn = document.getElementById("btnAvanzarTec"), formEntrega = document.getElementById("formEntrega");
     const bloqueado = d.avisoCobro ? true : false;
@@ -96,18 +99,22 @@ window.guardarNotasSolo = async () => {
     if(!notaNueva) return alert("Escribe algo para guardar.");
     
     const ahora = new Date();
-    const fechaFormateada = `${ahora.getDate()}-${ahora.getMonth()+1}-${ahora.getFullYear().toString().slice(-2)}`;
-    const nuevaLinea = `[${fechaFormateada}] ${notaNueva}`;
-    
-    // Acumulamos: lo nuevo va ARRIBA para que se vea primero
+    // Formato: DD-MM-AA HH:MM
+    const fechaLarga = `${ahora.getDate()}-${ahora.getMonth()+1}-${ahora.getFullYear().toString().slice(-2)} ${ahora.getHours()}:${ahora.getMinutes().toString().padStart(2, '0')}`;
+    const nuevaLinea = `[${fechaLarga}] ${notaNueva}`;
     const historialActualizado = nuevaLinea + "\n" + historialActual;
 
     try {
         await updateDoc(doc(db, "leads", idSeleccionado), { notasCTO: historialActualizado });
-        alert("Nota guardada en la lista.");
-        // Actualizamos localmente para no tener que cerrar y abrir
         historialActual = historialActualizado;
-        abrirProduccion(idSeleccionado, { notasCTO: historialActualizado }); 
+        // Refrescar modal sin cerrar
+        const container = document.getElementById("listaHistorial");
+        const div = document.createElement("div");
+        div.className = "nota-item";
+        div.innerHTML = nuevaLinea.replace('[', '<span class="nota-fecha">').replace(']', '</span>');
+        container.prepend(div);
+        document.getElementById("pNotas").value = "";
+        alert("Nota guardada.");
     } catch(e) { console.error(e); }
 };
 
@@ -115,8 +122,8 @@ async function avanzarEtapaTecnica(id, actual) {
     let proxima = "", hitoUpdate = "", aviso = null;
     const notaNueva = document.getElementById("pNotas").value || "Cambio de etapa";
     const ahora = new Date();
-    const fechaFormateada = `${ahora.getDate()}-${ahora.getMonth()+1}-${ahora.getFullYear().toString().slice(-2)}`;
-    const nuevaLinea = `[${fechaFormateada}] AVANCE: ${notaNueva}`;
+    const fechaLarga = `${ahora.getDate()}-${ahora.getMonth()+1}-${ahora.getFullYear().toString().slice(-2)} ${ahora.getHours()}:${ahora.getMinutes().toString().padStart(2, '0')}`;
+    const nuevaLinea = `[${fechaLarga}] AVANCE: ${notaNueva}`;
     const historialActualizado = nuevaLinea + "\n" + historialActual;
 
     if (actual === "Diseño") { proxima = "Desarrollo"; hitoUpdate = "80%"; aviso = "30% Desarrollo"; }
@@ -127,7 +134,7 @@ async function avanzarEtapaTecnica(id, actual) {
         await updateDoc(doc(db, "leads", id), { 
             estado: "finalizado", etapaProd: "Entregado", hito: "Finalizado", 
             fechaEntrega: f, accesosEntrega: a, 
-            notasCTO: `[${fechaFormateada}] ENTREGADO\n` + historialActualizado 
+            notasCTO: `[${fechaLarga}] ENTREGADO\n` + historialActualizado 
         });
         return cerrarModal();
     }

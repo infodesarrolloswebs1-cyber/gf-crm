@@ -19,8 +19,8 @@ function escucharDatos() {
             if(el) el.innerHTML = `<h3>${id.toUpperCase()}</h3>`;
         });
         
-        const tComis = document.getElementById("listaComisionesBody");
-        const tStat = document.getElementById("listaStatusBody");
+        const tComis = document.getElementById("listaComisiones");
+        const tStat = document.getElementById("listaStatus");
         if(tComis) tComis.innerHTML = "";
         if(tStat) tStat.innerHTML = "";
         
@@ -29,12 +29,13 @@ function escucharDatos() {
         snap.forEach(docSnap => {
             const d = docSnap.data(), id = docSnap.id;
             renderCard(d, id);
+            
+            const p = d.pagado || 0, m = d.monto || 0;
             if (d.estado === "produccion" || d.estado === "finalizado") {
                 ventasCount++;
-                const p = d.pagado || 0, m = d.monto || 0;
                 if(tComis) tComis.innerHTML += `<tr><td><b>${d.nombre}</b></td><td>USD ${m.toLocaleString()}</td><td>USD ${p.toLocaleString()}</td><td style="color:var(--green)">USD ${(p*0.1).toLocaleString()}</td><td>USD ${((m-p)*0.1).toLocaleString()}</td></tr>`;
                 if(tStat) tStat.innerHTML += `<tr><td><b>${d.nombre}</b></td><td><span style="background:var(--accent); padding:4px 8px; border-radius:5px; font-size:12px;">${d.etapaProd || "Espera"}</span></td><td>${d.hito || "50%"}</td><td>${d.notasCTO || "-"}</td></tr>`;
-            } else { pipTotal += Number(d.monto || 0); }
+            } else { pipTotal += m; }
         });
         document.getElementById("pipTotal").innerText = `USD ${pipTotal.toLocaleString()}`;
         document.getElementById("ventasCerradas").innerText = ventasCount;
@@ -144,12 +145,12 @@ window.agregarLead = async () => {
             tiempoEntregaCliente: document.getElementById("fTiempo").value,
             observaciones: document.getElementById("fObservaciones").value,
             estado: "nuevo", pagado: 0, fecha: new Date(), vendedor: auth.currentUser.email,
-            etiqueta: "frio", estadoProceso: "nuevo" // Valores por defecto
+            etiqueta: "frio", estadoProceso: "nuevo"
         };
         if (!data.nombre || !data.monto) return alert("Nombre y Monto mínimos.");
         await addDoc(collection(db, "leads"), data);
         alert("Lead cargado exitosamente.");
-        document.querySelectorAll(".form-container input, .form-container textarea").forEach(i => i.value = "");
+        document.querySelectorAll(".form-grid input, .form-grid textarea").forEach(i => i.value = "");
     } catch(e) { console.error(e); }
 };
 

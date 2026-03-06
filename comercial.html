@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GF - Panel Comercial v14.0</title>
+    <title>GF - Panel Comercial v15.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root { --bg: #020617; --sidebar: #0f172a; --accent: #3b82f6; --green: #22c55e; --card: #1e293b; --red: #ef4444; --text-dim: #94a3b8; --border: #334155; --orange: #f59e0b; --purple: #a855f7; --cyan: #06b6d4; }
@@ -30,8 +30,6 @@
         .col h3 { font-size: 12px; color: var(--text-dim); text-transform: uppercase; border-bottom: 2px solid var(--sidebar); padding-bottom: 15px; margin-bottom: 20px; text-align: center; }
         .card { background: var(--card); padding: 18px; margin-bottom: 15px; border-radius: 12px; border: 1px solid var(--border); cursor: pointer; position: relative; }
         .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; margin-bottom: 5px; margin-right: 5px; }
-        .tag-temp { border: 1px solid currentColor; background: transparent; }
-        .tag-status { background: var(--accent); color: white; }
         .btn-delete-mini { position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--red); cursor: pointer; font-size: 16px; opacity: 0.2; }
         .card:hover .btn-delete-mini { opacity: 1; }
         .table-container { background: var(--card); border-radius: 20px; border: 1px solid var(--border); overflow: hidden; }
@@ -41,6 +39,11 @@
         td { padding: 18px; border-bottom: 1px solid var(--border); font-size: 14px; }
         #modalLead { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(2, 6, 23, 0.95); z-index:2000; align-items:center; justify-content:center; }
         .modal-content { background:var(--sidebar); padding:35px; border-radius:24px; width:680px; border: 1px solid var(--border); max-height: 85vh; overflow-y: auto; }
+        
+        /* Estilos nuevos para Checkboxes */
+        .grid-etiquetas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #0f172a; padding: 15px; border-radius: 10px; border: 1px solid #334155; margin-bottom: 15px; }
+        .grid-etiquetas label { text-transform: none; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 8px; color: #e2e8f0; }
+        .grid-etiquetas input { width: auto; }
     </style>
 </head>
 <body>
@@ -123,36 +126,29 @@
             <div id="mDetalleTexto" style="font-size:13px; color:var(--text-dim); line-height:1.5"></div>
         </div>
         <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:20px;">
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
-                <div>
-                    <label>Temperatura</label>
-                    <select id="mEtiquetaSelect" onchange="cambiarEtiquetasManual()">
-                        <option value="frio">❄️ Frío</option>
-                        <option value="tibio">🔥 Tibio</option>
-                        <option value="caliente">🚀 Caliente</option>
-                        <option value="espera">⏳ Espera</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Estado Funnel</label>
-                    <select id="mEstadoProcesoSelect" onchange="cambiarEtiquetasManual()">
-                        <option value="nuevo">NUEVO CALIFICADO</option>
-                        <option value="r1">R1: COMERCIAL</option>
-                        <option value="envie_pres">PRESENTACIÓN ENVIADA</option>
-                        <option value="r2">R2: REUNIÓN CTO</option>
-                        <option value="r3">R3: REUNIÓN CIERRE</option>
-                        <option value="quiere_nda">QUIERE NDA</option>
-                        <option value="envie_nda">NDA ENVIADO</option>
-                        <option value="firmo_nda">NDA FIRMADO</option>
-                    </select>
-                </div>
+            
+            <label style="color:var(--accent); margin-bottom:10px;">ETIQUETAS DE SEGUIMIENTO (MÚLTIPLES):</label>
+            <div class="grid-etiquetas">
+                <label><input type="checkbox" value="caliente" class="tag-check"> 🚀 Caliente</label>
+                <label><input type="checkbox" value="tibio" class="tag-check"> 🔥 Tibio</label>
+                <label><input type="checkbox" value="frio" class="tag-check"> ❄️ Frío</label>
+                <label><input type="checkbox" value="espera" class="tag-check"> ⏳ Espera</label>
+                <label><input type="checkbox" value="nuevo" class="tag-check"> 🆕 Calificado</label>
+                <label><input type="checkbox" value="r1" class="tag-check"> 📞 R1 Comercial</label>
+                <label><input type="checkbox" value="envie_pres" class="tag-check"> 📄 Pres. Enviada</label>
+                <label><input type="checkbox" value="r2" class="tag-check"> 🖥️ R2 CTO</label>
+                <label><input type="checkbox" value="r3" class="tag-check"> 🤝 R3 Cierre</label>
+                <label><input type="checkbox" value="firmo_nda" class="tag-check"> 🖊️ NDA Firmado</label>
             </div>
+            <button class="btn-main" style="background:var(--accent); margin-bottom:15px; padding:10px;" onclick="guardarEtiquetasMultiples()">💾 APLICAR ETIQUETAS</button>
+
             <p id="mInstrucciones" style="color:var(--accent); font-weight:bold; font-size:12px;"></p>
             <input id="mLinkPDF" placeholder="Link Propuesta PDF" style="display:none; margin-bottom:15px;">
+            
             <div style="display:flex; gap:10px; flex-wrap: wrap;">
                 <button class="btn-main" id="btnAvanzar" style="margin-top:0; flex:1;">AVANZAR ETAPA</button>
                 <button class="btn-main" style="background:var(--green); margin-top:0; flex:1;" onclick="descargarPDF()">📥 PDF</button>
-                <button class="btn-main" style="background:#475569; margin-top:0; flex:1;" onclick="habilitarEdicion()">✏️ EDITAR INFO</button>
+                <button class="btn-main" style="background:#475569; margin-top:0; flex:1;" onclick="habilitarEdicion()">✏️ EDITAR</button>
                 <button class="btn-main" style="background:transparent; border:1px solid #334155; margin-top:0; flex:1;" onclick="cerrarModal()">CERRAR</button>
             </div>
         </div>

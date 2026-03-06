@@ -19,8 +19,11 @@ function escucharDatos() {
             if(el) el.innerHTML = `<h3>${id.toUpperCase()}</h3>`;
         });
         
-        document.getElementById("listaComisionesBody").innerHTML = "";
-        document.getElementById("listaStatusBody").innerHTML = "";
+        const tComis = document.getElementById("listaComisionesBody");
+        const tStat = document.getElementById("listaStatusBody");
+        if(tComis) tComis.innerHTML = "";
+        if(tStat) tStat.innerHTML = "";
+        
         let pipTotal = 0, ventasCount = 0;
 
         snap.forEach(docSnap => {
@@ -29,8 +32,8 @@ function escucharDatos() {
             if (d.estado === "produccion" || d.estado === "finalizado") {
                 ventasCount++;
                 const p = d.pagado || 0, m = d.monto || 0;
-                document.getElementById("listaComisionesBody").innerHTML += `<tr><td><b>${d.nombre}</b></td><td>USD ${m.toLocaleString()}</td><td>USD ${p.toLocaleString()}</td><td style="color:var(--green)">USD ${(p*0.1).toLocaleString()}</td><td>USD ${((m-p)*0.1).toLocaleString()}</td></tr>`;
-                document.getElementById("listaStatusBody").innerHTML += `<tr><td><b>${d.nombre}</b></td><td><span style="background:var(--accent); padding:4px 8px; border-radius:5px; font-size:12px;">${d.etapaProd || "Espera"}</span></td><td>${d.hito || "50%"}</td><td>${d.notasCTO || "-"}</td></tr>`;
+                if(tComis) tComis.innerHTML += `<tr><td><b>${d.nombre}</b></td><td>USD ${m.toLocaleString()}</td><td>USD ${p.toLocaleString()}</td><td style="color:var(--green)">USD ${(p*0.1).toLocaleString()}</td><td>USD ${((m-p)*0.1).toLocaleString()}</td></tr>`;
+                if(tStat) tStat.innerHTML += `<tr><td><b>${d.nombre}</b></td><td><span style="background:var(--accent); padding:4px 8px; border-radius:5px; font-size:12px;">${d.etapaProd || "Espera"}</span></td><td>${d.hito || "50%"}</td><td>${d.notasCTO || "-"}</td></tr>`;
             } else { pipTotal += Number(d.monto || 0); }
         });
         document.getElementById("pipTotal").innerText = `USD ${pipTotal.toLocaleString()}`;
@@ -49,6 +52,7 @@ function renderCard(d, id) {
         <span class="tag tag-temp" style="color:${tempColors[d.etiqueta] || '#94a3b8'}">${(d.etiqueta || 'frio').toUpperCase()}</span>
         <span class="tag tag-status">${funnelLabels[d.estadoProceso] || 'NUEVO'}</span><br>
         <b>${d.nombre}</b><br>
+        <small style="color:var(--text-dim)">${d.empresa || 'Empresa'}</small><br>
         <span style="color:var(--green)">USD ${Number(d.monto).toLocaleString()}</span>
     `;
     card.onclick = () => abrirDetalles(id, d);
@@ -60,34 +64,49 @@ window.abrirDetalles = (id, d) => {
     leadSeleccionadoId = id; datosLeadActual = d;
     document.getElementById("modalLead").style.display = "flex";
     document.getElementById("mNombre").innerText = d.nombre;
+    
     document.getElementById("mDetalleTexto").innerHTML = `
-        <p><strong>ESTADO FUNNEL:</strong> ${(d.estadoProceso || 'nuevo').toUpperCase()}</p>
-        <p><strong>WHATSAPP:</strong> ${d.whatsapp || '-'}</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; border-bottom:1px solid #334155; padding-bottom:10px; margin-bottom:10px;">
+            <div><label style="color:var(--accent); font-size:9px;">WHATSAPP</label><br>${d.whatsapp || '-'}</div>
+            <div><label style="color:var(--accent); font-size:9px;">EMPRESA/APP</label><br>${d.empresa || '-'}</div>
+            <div><label style="color:var(--accent); font-size:9px;">UBICACIÓN</label><br>${d.provincia || '-'}, ${d.pais || '-'}</div>
+            <div><label style="color:var(--accent); font-size:9px;">DECISIÓN/SOCIO</label><br>Solo: ${d.decisionSolo} / Socio: ${d.socio}</div>
+        </div>
         <p><strong>PROBLEMA:</strong> ${d.problema || '-'}</p>
+        <p><strong>FUNCIONES:</strong> ${d.funciones || '-'}</p>
+        <p><strong>INTEGRACIONES:</strong> ${d.integraciones || '-'}</p>
         <p><strong>OBSERVACIONES:</strong> ${d.observaciones || '-'}</p>
     `;
+
+    document.getElementById("mEtiquetaSelect").value = d.etiqueta || "frio";
+    document.getElementById("mEstadoProcesoSelect").value = d.estadoProceso || "nuevo";
     
     const btn = document.getElementById("btnAvanzar"), inputPDF = document.getElementById("mLinkPDF"), inst = document.getElementById("mInstrucciones");
     btn.style.display = (d.estado === "produccion") ? "none" : "block";
     inputPDF.style.display = (d.estado === "consultoria") ? "block" : "none";
     
     if (d.avisoCobro) { inst.innerText = "Esperando validación CTR: " + d.avisoCobro; btn.style.display = "none"; }
-    else if (d.estado === "nuevo") { inst.innerText = "Mover a Consultoría."; btn.onclick = () => moverLead(id, "nuevo"); }
+    else if (d.estado === "nuevo") { inst.innerText = "Mover a Consultoría Técnica."; btn.onclick = () => moverLead(id, "nuevo"); }
     else if (d.estado === "consultoria") { inst.innerText = "Cargar PDF para Contrato."; btn.onclick = () => moverLead(id, "consultoria"); }
     else if (d.estado === "contrato") { inst.innerText = "¿Aviso de pago 50%?"; btn.onclick = () => moverLead(id, "contrato"); }
 };
 
+window.cambiarEtiquetasManual = async () => {
+    const t = document.getElementById("mEtiquetaSelect").value;
+    const p = document.getElementById("mEstadoProcesoSelect").value;
+    await updateDoc(doc(db, "leads", leadSeleccionadoId), { etiqueta: t, estadoProceso: p });
+};
+
 window.descargarPDF = () => {
-    const opt = { margin: 1, filename: `Ficha_${datosLeadActual.nombre}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+    const opt = { margin: 1, filename: `Ficha_${datosLeadActual.nombre}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
     const clon = document.getElementById("area-imprimible").cloneNode(true);
     clon.style.color = "#000"; clon.style.padding = "20px";
     html2pdf().set(opt).from(clon).save();
 };
 
 window.habilitarEdicion = () => {
-    const t = prompt("Temperatura (frio, tibio, caliente, espera):", datosLeadActual.etiqueta);
-    const p = prompt("Proceso (nuevo, r1, envie_pres, r2, r3, quiere_nda, envie_nda, firmo_nda):", datosLeadActual.estadoProceso);
-    if(t || p) updateDoc(doc(db, "leads", leadSeleccionadoId), { etiqueta: t || datosLeadActual.etiqueta, estadoProceso: p || datosLeadActual.estadoProceso });
+    const nuevoMonto = prompt("Actualizar presupuesto USD:", datosLeadActual.monto);
+    if(nuevoMonto) updateDoc(doc(db, "leads", leadSeleccionadoId), { monto: Number(nuevoMonto) });
     cerrarModal();
 };
 
@@ -104,22 +123,34 @@ async function moverLead(id, actual) {
 }
 
 window.agregarLead = async () => {
-    const data = {
-        nombre: document.getElementById("fNombre").value,
-        whatsapp: document.getElementById("fWhatsapp").value,
-        empresa: document.getElementById("fEmpresa").value,
-        monto: Number(document.getElementById("fMonto").value),
-        etiqueta: document.getElementById("fEtiqueta").value,
-        estadoProceso: document.getElementById("fEstadoProceso").value,
-        tipoProyecto: document.getElementById("fTipo").value,
-        problema: document.getElementById("fProblema").value,
-        observaciones: document.getElementById("fObservaciones").value,
-        estado: "nuevo", pagado: 0, fecha: new Date(), vendedor: auth.currentUser.email
-    };
-    if (!data.nombre || !data.monto) return alert("Nombre y Monto obligatorios.");
-    await addDoc(collection(db, "leads"), data);
-    document.querySelectorAll(".form-container input, .form-container textarea").forEach(i => i.value = "");
-    alert("Lead cargado.");
+    try {
+        const data = {
+            nombre: document.getElementById("fNombre").value,
+            whatsapp: document.getElementById("fWhatsapp").value,
+            empresa: document.getElementById("fEmpresa").value,
+            decisionSolo: document.getElementById("fSolo").value,
+            socio: document.getElementById("fSocio").value,
+            provincia: document.getElementById("fProvincia").value,
+            pais: document.getElementById("fPais").value,
+            monto: Number(document.getElementById("fMonto").value),
+            tipoProyecto: document.getElementById("fTipo").value,
+            problema: document.getElementById("fProblema").value,
+            usuariosSistema: document.getElementById("fUsuarios").value,
+            plataformas: document.getElementById("fPlataformas").value,
+            funciones: document.getElementById("fFunciones").value,
+            integraciones: document.getElementById("fIntegraciones").value,
+            branding: document.getElementById("fBranding").value,
+            competencia: document.getElementById("fCompetencia").value,
+            tiempoEntregaCliente: document.getElementById("fTiempo").value,
+            observaciones: document.getElementById("fObservaciones").value,
+            estado: "nuevo", pagado: 0, fecha: new Date(), vendedor: auth.currentUser.email,
+            etiqueta: "frio", estadoProceso: "nuevo" // Valores por defecto
+        };
+        if (!data.nombre || !data.monto) return alert("Nombre y Monto mínimos.");
+        await addDoc(collection(db, "leads"), data);
+        alert("Lead cargado exitosamente.");
+        document.querySelectorAll(".form-container input, .form-container textarea").forEach(i => i.value = "");
+    } catch(e) { console.error(e); }
 };
 
 window.eliminarLead = async (id) => { if(confirm("¿Borrar permanentemente?")) await deleteDoc(doc(db, "leads", id)); };

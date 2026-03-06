@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GF - Panel Comercial v6.0</title>
+    <title>GF - Panel Comercial v14.0</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        :root { --bg: #020617; --sidebar: #0f172a; --accent: #3b82f6; --green: #22c55e; --card: #1e293b; --red: #ef4444; --text-dim: #94a3b8; --border: #334155; }
+        :root { --bg: #020617; --sidebar: #0f172a; --accent: #3b82f6; --green: #22c55e; --card: #1e293b; --red: #ef4444; --text-dim: #94a3b8; --border: #334155; --orange: #f59e0b; --purple: #a855f7; --cyan: #06b6d4; }
         body { margin:0; font-family: 'Inter', sans-serif; display: flex; height: 100vh; background: var(--bg); color: white; overflow: hidden; }
         nav { width: 260px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 25px; shrink: 0; }
         nav h2 { font-size: 18px; margin-bottom: 30px; color: var(--accent); font-weight: 800; }
@@ -24,15 +25,28 @@
         label { display: block; font-size: 11px; color: var(--text-dim); font-weight: bold; margin-bottom: 8px; text-transform: uppercase; }
         input, textarea, select { padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; color: white; width: 100%; box-sizing: border-box; }
         .btn-main { background: var(--accent); border: none; color: white; padding: 16px; border-radius: 10px; cursor: pointer; font-weight: 800; width: 100%; margin-top: 20px; text-transform: uppercase; }
+        
         .pipeline { display: flex; gap: 20px; align-items: flex-start; }
         .col { flex: 1; background: #020617; padding: 15px; border-radius: 18px; border: 1px solid var(--border); min-height: 400px; }
         .col h3 { font-size: 12px; color: var(--text-dim); text-transform: uppercase; border-bottom: 2px solid var(--sidebar); padding-bottom: 15px; margin-bottom: 20px; text-align: center; }
-        .card { background: var(--card); padding: 18px; margin-bottom: 15px; border-radius: 12px; border: 1px solid var(--border); cursor: pointer; }
+        
+        .card { background: var(--card); padding: 18px; margin-bottom: 15px; border-radius: 12px; border: 1px solid var(--border); cursor: pointer; position: relative; transition: 0.3s; }
+        .card:hover { border-color: var(--accent); transform: translateY(-3px); }
+        
+        /* ESTILOS DE ETIQUETAS */
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; margin-bottom: 5px; margin-right: 5px; }
+        .tag-temp { border: 1px solid currentColor; background: transparent; }
+        .tag-status { background: var(--accent); color: white; }
+        
+        .btn-delete-mini { position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--red); cursor: pointer; font-size: 16px; opacity: 0.2; }
+        .card:hover .btn-delete-mini { opacity: 1; }
+
         .table-container { background: var(--card); border-radius: 20px; border: 1px solid var(--border); overflow: hidden; }
         table { width: 100%; border-collapse: collapse; text-align: left; }
         thead { background: #1e293b; }
-        th { padding: 18px; font-size: 12px; color: var(--accent); }
+        th { padding: 18px; font-size: 12px; color: var(--accent); text-transform: uppercase; }
         td { padding: 18px; border-bottom: 1px solid var(--border); font-size: 14px; }
+
         #modalLead { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(2, 6, 23, 0.95); z-index:2000; align-items:center; justify-content:center; }
         .modal-content { background:var(--sidebar); padding:35px; border-radius:24px; width:650px; border: 1px solid var(--border); max-height: 85vh; overflow-y: auto; }
     </style>
@@ -60,22 +74,34 @@
                 <div><label>Nombre Completo</label><input id="fNombre" placeholder="Bruno Campelleno"></div>
                 <div><label>WhatsApp</label><input id="fWhatsapp" placeholder="+54 9 ..."></div>
                 <div><label>Empresa / App</label><input id="fEmpresa" placeholder="Nombre de la app"></div>
-                <div><label>¿Decisión Sola?</label><select id="fSolo"><option value="si">Sí</option><option value="no">No</option></select></div>
-                <div><label>¿Socio?</label><select id="fSocio"><option value="no">No</option><option value="si">Sí</option></select></div>
-                <div><label>Provincia</label><input id="fProvincia" placeholder="Cordoba"></div>
-                <div><label>País</label><input id="fPais" placeholder="Argentina"></div>
                 <div><label>Monto USD</label><input id="fMonto" type="number" placeholder="16000"></div>
+                <div>
+                    <label>Temperatura</label>
+                    <select id="fEtiqueta">
+                        <option value="caliente">🚀 Caliente</option>
+                        <option value="tibio">🔥 Tibio</option>
+                        <option value="frio">❄️ Frío</option>
+                        <option value="espera">⏳ En Espera</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Estado del Funnel</label>
+                    <select id="fEstadoProceso">
+                        <option value="nuevo">🆕 Lead Nuevo Calificado</option>
+                        <option value="r1">📞 R1: Comercial Inicial</option>
+                        <option value="envie_pres">📄 Se envió Presentación</option>
+                        <option value="r2">🖥️ R2: Reunión con CTO</option>
+                        <option value="r3">🤝 R3: Reunión de Cierre</option>
+                        <option value="quiere_nda">📜 Quiere firmar NDA Discovery</option>
+                        <option value="envie_nda">📧 Se envió NDA para firmar</option>
+                        <option value="firmo_nda">🖊️ Firmó NDA Discovery</option>
+                    </select>
+                </div>
 
-                <div class="form-section-title">Detalles del Proyecto</div>
-                <div class="full-row"><label>Tipo de Proyecto</label><input id="fTipo" placeholder="App móvil"></div>
+                <div class="form-section-title">Detalles Técnicos</div>
+                <div class="full-row"><label>Tipo de Proyecto</label><input id="fTipo" placeholder="App móvil, Web, SaaS..."></div>
                 <div class="full-row"><label>Problema a Resolver</label><textarea id="fProblema"></textarea></div>
-                <div class="full-row"><label>Usuarios del Sistema</label><input id="fUsuarios" placeholder="Admin, Cliente, Conductor"></div>
-                <div class="full-row"><label>Plataformas</label><input id="fPlataformas" placeholder="iOS, Android, Panel"></div>
-                <div class="full-row"><label>Funciones Core</label><textarea id="fFunciones"></textarea></div>
-                <div class="full-row"><label>Integraciones</label><input id="fIntegraciones" placeholder="Maps, Pagos..."></div>
-                <div class="full-row"><label>¿Branding?</label><select id="fBranding"><option value="no">No</option><option value="si">Sí</option></select></div>
-                <div class="full-row"><label>Competencia</label><input id="fCompetencia" placeholder="Uber, Cabify"></div>
-                <div class="full-row"><label>Expectativa Entrega</label><input id="fTiempo" placeholder="6 meses"></div>
+                <div class="full-row"><label>Observaciones Extras</label><textarea id="fObservaciones"></textarea></div>
             </div>
             <button class="btn-main" onclick="agregarLead()">Finalizar y Cargar Lead</button>
         </div>
@@ -109,14 +135,18 @@
 
 <div id="modalLead">
     <div class="modal-content">
-        <h3 id="mNombre"></h3>
-        <div id="mDetalleTexto" style="font-size:14px; color:var(--text-dim)"></div>
+        <div id="area-imprimible">
+            <h2 id="mNombre" style="margin-top:0; color:var(--accent);"></h2>
+            <div id="mDetalleTexto" style="font-size:14px; color:var(--text-dim); line-height:1.6"></div>
+        </div>
         <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:20px;">
             <p id="mInstrucciones" style="color:var(--accent); font-weight:bold;"></p>
             <input id="mLinkPDF" placeholder="Link Propuesta PDF" style="display:none; margin-bottom:15px;">
-            <div style="display:flex; gap:10px;">
-                <button class="btn-main" id="btnAvanzar" style="margin-top:0">AVANZAR</button>
-                <button class="btn-main" style="background:#475569; margin-top:0" onclick="cerrarModal()">CERRAR</button>
+            <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                <button class="btn-main" id="btnAvanzar" style="margin-top:0; flex:1;">AVANZAR ETAPA</button>
+                <button class="btn-main" style="background:var(--green); margin-top:0; flex:1;" onclick="descargarPDF()">📥 PDF</button>
+                <button class="btn-main" style="background:#475569; margin-top:0; flex:1;" onclick="habilitarEdicion()">✏️ EDITAR</button>
+                <button class="btn-main" style="background:transparent; border:1px solid #334155; margin-top:0; flex:1;" onclick="cerrarModal()">CERRAR</button>
             </div>
         </div>
     </div>

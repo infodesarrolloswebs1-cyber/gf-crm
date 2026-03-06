@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GF - Panel CTO v9.0</title>
+    <title>GF - Panel CTO v15.0</title>
     <style>
         :root { --bg: #020617; --sidebar: #0f172a; --accent: #8b5cf6; --green: #22c55e; --card: #1e293b; --red: #ef4444; --text-dim: #94a3b8; }
         body { margin:0; font-family: 'Inter', sans-serif; display: flex; height: 100vh; background: var(--bg); color: white; overflow: hidden; }
@@ -18,16 +18,20 @@
         .pipeline { display: flex; gap: 15px; align-items: flex-start; }
         .col { flex: 1; background: #020617; padding: 15px; border-radius: 15px; border: 1px solid #1e293b; min-height: 550px; }
         .col h3 { font-size: 11px; color: var(--text-dim); text-transform: uppercase; border-bottom: 1px solid #1e293b; padding-bottom: 12px; margin-bottom: 15px; }
-        .card { background: var(--card); padding: 15px; margin-bottom: 12px; border-radius: 10px; border: 1px solid #334155; cursor: pointer; }
+        
+        /* ESTILO TARJETAS CON ETIQUETAS */
+        .card { background: var(--card); padding: 15px; margin-bottom: 12px; border-radius: 10px; border: 1px solid #334155; cursor: pointer; transition: 0.3s; }
+        .card:hover { border-color: var(--accent); transform: translateY(-3px); }
+        .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; margin-bottom: 5px; margin-right: 5px; color: white; }
+
         #modalCTO { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:2000; align-items:center; justify-content:center; }
         .modal-content { background:var(--sidebar); padding:30px; border-radius:20px; width:650px; border: 1px solid var(--accent); max-height: 90vh; overflow-y: auto; }
         .btn-cto { background: var(--accent); border: none; color: white; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         textarea, input { width: 100%; background: #020617; color: white; border: 1px solid #334155; border-radius: 8px; padding: 10px; margin-top: 10px; box-sizing: border-box; }
         
-        /* Historial de Notas */
         .historial-notas { background: #020617; padding: 15px; border-radius: 10px; margin-top: 10px; font-size: 13px; max-height: 180px; overflow-y: auto; border: 1px solid #1e293b; }
-        .nota-item { border-bottom: 1px solid #1e293b; padding: 8px 0; color: #e2e8f0; display: block; }
-        .nota-fecha { color: #a78bfa; font-weight: bold; font-size: 11px; margin-right: 8px; display: inline-block; min-width: 120px; }
+        .nota-item { border-bottom: 1px solid #1e293b; padding: 8px 0; color: #e2e8f0; }
+        .nota-fecha { color: #a78bfa; font-weight: bold; font-size: 11px; margin-right: 8px; }
     </style>
 </head>
 <body>
@@ -38,14 +42,14 @@
 </nav>
 <main>
     <div class="stats-grid">
-        <div class="stat-card"><span>Carga de Equipo</span><h2 id="cargaTotal">0 / 5</h2></div>
-        <div class="stat-card"><span>Proyectos Entregados</span><h2 id="countEntregados">0</h2></div>
+        <div class="stat-card"><span>Proyectos en Curso</span><h2 id="cargaTotal">0 / 5</h2></div>
+        <div class="stat-card"><span>Entregados Totales</span><h2 id="countEntregados">0</h2></div>
     </div>
     <div class="pipeline">
         <div class="col" id="col-Diseño"><h3>DISEÑO</h3></div>
         <div class="col" id="col-Desarrollo"><h3>DESARROLLO</h3></div>
         <div class="col" id="col-Testing"><h3>TESTING</h3></div>
-        <div class="col" id="col-Entregado"><h3 style="color:var(--green)">ENTREGADO</h3></div>
+        <div class="col" id="col-Entregado"><h3>ENTREGADO</h3></div>
     </div>
 </main>
 
@@ -53,22 +57,20 @@
     <div class="modal-content">
         <h3 id="pNombre">Proyecto</h3>
         <p><strong>Ficha Técnica Completa:</strong></p>
-        <div id="pIdea" style="background:#020617; padding:15px; border-radius:10px; margin-bottom:20px; font-size:13px; color:#e2e8f0; line-height:1.6;">
-            </div>
+        <div id="pIdea" style="background:#020617; padding:15px; border-radius:10px; margin-bottom:20px; font-size:13px; color:#e2e8f0; line-height:1.6;"></div>
         
         <div id="formEntrega" style="display:none; border-top: 2px solid var(--green); padding-top: 15px; margin-top: 15px;">
             <h4 style="color:var(--green)">Documentación de Entrega</h4>
             <input type="date" id="pFechaEntrega">
-            <textarea id="pAccesos" placeholder="Credenciales transferidas..."></textarea>
+            <textarea id="pAccesos" placeholder="Credenciales y accesos finales..."></textarea>
         </div>
 
-        <label><strong>Bitácora de Notas (Historial con Fecha y Hora):</strong></label>
+        <label><strong>Bitácora de Notas:</strong></label>
         <div id="listaHistorial" class="historial-notas"></div>
-
-        <textarea id="pNotas" placeholder="Escribe la nueva actualización técnica aquí..."></textarea>
+        <textarea id="pNotas" placeholder="Nueva actualización técnica..."></textarea>
         
         <div style="margin-top:25px; display:flex; gap:10px; justify-content: center; flex-wrap: wrap;">
-            <button class="btn-cto" style="background:#475569" onclick="guardarNotasSolo()">💾 GUARDAR ACTUALIZACIÓN</button>
+            <button class="btn-cto" style="background:#475569" onclick="guardarNotasSolo()">💾 GUARDAR NOTA</button>
             <button class="btn-cto" id="btnAvanzarTec">AVANZAR ETAPA ➡️</button>
             <button class="btn-cto" style="background:transparent; border:1px solid #334155" onclick="cerrarModal()">CERRAR</button>
         </div>

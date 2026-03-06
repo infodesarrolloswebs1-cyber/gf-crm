@@ -45,13 +45,25 @@ function escucharDatos() {
 function renderCard(d, id) {
     const card = document.createElement("div");
     card.className = "card";
-    const tempColors = { caliente: "#ef4444", tibio: "#f59e0b", frio: "#3b82f6", espera: "#a855f7" };
-    const funnelLabels = { nuevo: "CALIFICADO", r1: "R1", envie_pres: "PRES.", r2: "R2", r3: "CIERRE", quiere_nda: "NDA", envie_nda: "NDA ENVIADO", firmo_nda: "NDA OK" };
     
+    const config = {
+        caliente: { c: "#ef4444", n: "CALIENTE" }, tibio: { c: "#f59e0b", n: "TIBIO" },
+        frio: { c: "#3b82f6", n: "FRIO" }, espera: { c: "#a855f7", n: "ESPERA" },
+        nuevo: { c: "#06b6d4", n: "CALIFICADO" }, r1: { c: "#8b5cf6", n: "R1" },
+        envie_pres: { c: "#6366f1", n: "PRES." }, r2: { c: "#ec4899", n: "R2" },
+        r3: { c: "#22c55e", n: "R3" }, firmo_nda: { c: "#10b981", n: "NDA OK" }
+    };
+
+    let tagsHtml = "";
+    const marcadas = d.etiquetasMultiples || [];
+    marcadas.forEach(tagKey => {
+        const conf = config[tagKey];
+        if(conf) tagsHtml += `<span class="tag" style="background:${conf.c}; color:white;">${conf.n}</span>`;
+    });
+
     card.innerHTML = `
         <button class="btn-delete-mini" onclick="event.stopPropagation(); eliminarLead('${id}')">🗑️</button>
-        <span class="tag tag-temp" style="color:${tempColors[d.etiqueta] || '#94a3b8'}">${(d.etiqueta || 'frio').toUpperCase()}</span>
-        <span class="tag tag-status">${funnelLabels[d.estadoProceso] || 'NUEVO'}</span><br>
+        <div style="margin-bottom:8px;">${tagsHtml}</div>
         <b>${d.nombre}</b><br>
         <small style="color:var(--text-dim)">${d.empresa || 'Empresa'}</small><br>
         <span style="color:var(--green)">USD ${Number(d.monto).toLocaleString()}</span>
@@ -71,7 +83,7 @@ window.abrirDetalles = (id, d) => {
             <div><label style="color:var(--accent); font-size:9px;">WHATSAPP</label><br>${d.whatsapp || '-'}</div>
             <div><label style="color:var(--accent); font-size:9px;">EMPRESA/APP</label><br>${d.empresa || '-'}</div>
             <div><label style="color:var(--accent); font-size:9px;">UBICACIÓN</label><br>${d.provincia || '-'}, ${d.pais || '-'}</div>
-            <div><label style="color:var(--accent); font-size:9px;">DECISIÓN/SOCIO</label><br>Solo: ${d.decisionSolo} / Socio: ${d.socio}</div>
+            <div><label style="color:var(--accent); font-size:9px;">DECISIÓN/SOCIO</label><br>Solo: ${d.decisionSolo || '-'} / Socio: ${d.socio || '-'}</div>
         </div>
         <p><strong>PROBLEMA:</strong> ${d.problema || '-'}</p>
         <p><strong>FUNCIONES:</strong> ${d.funciones || '-'}</p>
@@ -79,23 +91,27 @@ window.abrirDetalles = (id, d) => {
         <p><strong>OBSERVACIONES:</strong> ${d.observaciones || '-'}</p>
     `;
 
-    document.getElementById("mEtiquetaSelect").value = d.etiqueta || "frio";
-    document.getElementById("mEstadoProcesoSelect").value = d.estadoProceso || "nuevo";
+    // Marcar checkboxes guardados
+    const marcadas = d.etiquetasMultiples || [];
+    document.querySelectorAll(".tag-check").forEach(c => {
+        c.checked = marcadas.includes(c.value);
+    });
     
     const btn = document.getElementById("btnAvanzar"), inputPDF = document.getElementById("mLinkPDF"), inst = document.getElementById("mInstrucciones");
     btn.style.display = (d.estado === "produccion") ? "none" : "block";
     inputPDF.style.display = (d.estado === "consultoria") ? "block" : "none";
     
     if (d.avisoCobro) { inst.innerText = "Esperando validación CTR: " + d.avisoCobro; btn.style.display = "none"; }
-    else if (d.estado === "nuevo") { inst.innerText = "Mover a Consultoría Técnica."; btn.onclick = () => moverLead(id, "nuevo"); }
+    else if (d.estado === "nuevo") { inst.innerText = "Mover a Consultoría."; btn.onclick = () => moverLead(id, "nuevo"); }
     else if (d.estado === "consultoria") { inst.innerText = "Cargar PDF para Contrato."; btn.onclick = () => moverLead(id, "consultoria"); }
     else if (d.estado === "contrato") { inst.innerText = "¿Aviso de pago 50%?"; btn.onclick = () => moverLead(id, "contrato"); }
 };
 
-window.cambiarEtiquetasManual = async () => {
-    const t = document.getElementById("mEtiquetaSelect").value;
-    const p = document.getElementById("mEstadoProcesoSelect").value;
-    await updateDoc(doc(db, "leads", leadSeleccionadoId), { etiqueta: t, estadoProceso: p });
+window.guardarEtiquetasMultiples = async () => {
+    const seleccionadas = [];
+    document.querySelectorAll(".tag-check").forEach(c => { if(c.checked) seleccionadas.push(c.value); });
+    await updateDoc(doc(db, "leads", leadSeleccionadoId), { etiquetasMultiples: seleccionadas });
+    alert("Etiquetas aplicadas.");
 };
 
 window.descargarPDF = () => {
@@ -145,11 +161,11 @@ window.agregarLead = async () => {
             tiempoEntregaCliente: document.getElementById("fTiempo").value,
             observaciones: document.getElementById("fObservaciones").value,
             estado: "nuevo", pagado: 0, fecha: new Date(), vendedor: auth.currentUser.email,
-            etiqueta: "frio", estadoProceso: "nuevo"
+            etiquetasMultiples: []
         };
         if (!data.nombre || !data.monto) return alert("Nombre y Monto mínimos.");
         await addDoc(collection(db, "leads"), data);
-        alert("Lead cargado exitosamente.");
+        alert("Lead cargado.");
         document.querySelectorAll(".form-grid input, .form-grid textarea").forEach(i => i.value = "");
     } catch(e) { console.error(e); }
 };
